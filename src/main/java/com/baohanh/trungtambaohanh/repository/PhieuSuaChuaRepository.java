@@ -17,7 +17,8 @@ public interface PhieuSuaChuaRepository extends JpaRepository<PhieuSuaChua, Inte
 
     // Đếm số phiếu theo trạng thái
     long countByTrangThai(String trangThai);
-
+    List<PhieuSuaChua> findByKyThuatVien_MaNV(Integer maNV);
+    
     // Lấy các phiếu đã hoàn thành và có đủ ngày nhận/ngày xong để tính thời gian
     @Query("SELECT p FROM PhieuSuaChua p WHERE p.ngayTiepNhan IS NOT NULL AND p.ngayHoanThanh IS NOT NULL AND p.trangThai IN ('Đã sửa xong', 'Đã trả khách')")
     List<PhieuSuaChua> findAllCompletedWithTimestamps();

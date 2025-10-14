@@ -4,33 +4,44 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 
+@Entity
+@Table(name = "chi_tiet_sua_chua", schema = "release")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "ChiTietSuaChua", schema = "release")
 public class ChiTietSuaChua {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "MaChiTiet")
+    @Column(name = "ma_chi_tiet")
     private Integer maChiTiet;
-
-    @Column(name = "SoLuong", nullable = false)
-    private Integer soLuong;
-
-    @Column(name = "DonGia", nullable = false)
-    private BigDecimal donGia;
-
-    @Column(name = "ThanhTien", nullable = false)
-    private BigDecimal thanhTien;
-
-    @ManyToOne
-    @JoinColumn(name = "MaPhieu", nullable = false)
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ma_phieu", nullable = false)
     private PhieuSuaChua phieuSuaChua;
-
-    @ManyToOne
-    @JoinColumn(name = "MaLinhKien", nullable = false)
+    
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ma_linh_kien", nullable = false)
     private LinhKien linhKien;
+    
+    @Column(name = "so_luong", nullable = false)
+    private Integer soLuong;
+    
+    @Column(name = "don_gia", nullable = false, precision = 38, scale = 2)
+    private BigDecimal donGia;
+    
+    @Column(name = "thanh_tien", nullable = false, precision = 38, scale = 2)
+    private BigDecimal thanhTien;
+    
+    // TÍNH THÀNH TIỀN TỰ ĐỘNG TRƯỚC KHI LƯU
+    @PrePersist
+    @PreUpdate
+    public void calculateThanhTien() {
+        if (soLuong != null && donGia != null) {
+            this.thanhTien = donGia.multiply(BigDecimal.valueOf(soLuong));
+        }
+    }
 }

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu linh kiện</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div>
+                    <h1>Tra cứu linh kiện</h1>
+                    <p class="text-muted">Tìm kiếm thông tin linh kiện thay thế</p>
+                </div>
+                <a href="/technician/dashboard" class="btn btn-outline">← Quay lại dashboard</a>
+            </div>
+            
+            <form th:action="@{/technician/linh-kien}" method="get">
+                <div class="search-box">
+                    <input type="text" 
+                           name="keyword" 
+                           th:value="${keyword}"
+                           placeholder="Nhập tên linh kiện..."
+                           style="flex: 1;">
+                    <button type="submit" class="btn">Tìm kiếm</button>
+                </div>
+            </form>
+            
+            <div th:if="${linhKienList.isEmpty()}" class="text-center" style="padding: 48px 0;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                <h3 style="color: #64748b;">Không tìm thấy linh kiện</h3>
+                <p class="text-muted" th:if="${keyword}">Không có kết quả cho "<span th:text="${keyword}"></span>"</p>
+                <p class="text-muted" th:unless="${keyword}">Nhập từ khóa để tìm kiếm linh kiện</p>
+            </div>
+            
+            <table th:if="${!linhKienList.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th>Mã Linh Kiện</th>
+                        <th>Tên Linh Kiện</th>
+                        <th>Đơn Giá</th>
+                        <th>Số Lượng Tồn</th>
+                        <th>Nhà Cung Cấp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="lk : ${linhKienList}">
+                        <td><strong th:text="${lk.maLinhKien}"></strong></td>
+                        <td th:text="${lk.tenLinhKien}"></td>
+                        <td>
+                            <span th:text="${#numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT')}"></span>
+                            <span style="color: #64748b; font-size: 13px;"> VNĐ</span>
+                        </td>
+                        <td>
+                            <span class="badge" 
+                                  th:classappend="${lk.soLuongTon > 20} ? 'badge-success' : (${lk.soLuongTon > 0} ? 'badge-warning' : 'badge-danger')"
+                                  th:text="${lk.soLuongTon}">
+                            </span>
+                        </td>
+                        <td th:text="${lk.nhaCungCap}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
