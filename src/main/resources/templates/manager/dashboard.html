@@ -3,117 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Báo cáo và Thống kê</title>
-    <link rel="stylesheet" th:href="@{/css/manager-style.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
     <style>
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
-
-        .kpi-card {
-            background-color: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            border-left: 5px solid #007bff;
-        }
-        
-        .kpi-card.revenue { border-color: #28a745; }
-        .kpi-card.tickets { border-color: #ffc107; }
-        .kpi-card.completed { border-color: #17a2b8; }
-        .kpi-card.time { border-color: #6f42c1; }
-
-        .kpi-card h3 {
-            margin: 0 0 10px;
-            color: #6c757d;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-
-        .kpi-card p {
-            font-size: 2.2em;
-            font-weight: bold;
-            margin: 0;
-            color: #343a40;
-        }
-
-        .details-section {
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .details-section h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 10px;
-        }
-
-        .details-section ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .details-section ul li {
-            margin-bottom: 15px;
-        }
-
-        .details-section ul li a {
-            text-decoration: none;
-            color: #007bff;
-            font-size: 1.1em;
-        }
-
-        .details-section ul li a:hover {
-            text-decoration: underline;
-        }
+        .kpi-grid { display: flex; gap: 20px; }
+        .kpi-card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; text-align: center; }
+        .kpi-card h3 { margin: 0; color: #555; }
+        .kpi-card p { font-size: 2em; font-weight: bold; margin: 10px 0 0; }
     </style>
 </head>
 <body>
+    <h1>Xem báo cáo và thống kê</h1>
 
-    <div th:replace="~{manager/fragments :: sidebar(activePage='dashboard')}"></div>
-
-    <div class="main-content">
-        <h1>Tổng quan và Thống kê</h1>
-
-        <div class="kpi-grid">
-            <div class="kpi-card revenue">
-                <h3>Tổng doanh thu</h3>
-                <p th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</p>
-            </div>
-            <div class="kpi-card tickets">
-                <h3>Tổng phiếu sửa</h3>
-                <p th:text="${stats.totalTickets}">0</p>
-            </div>
-            <div class="kpi-card completed">
-                <h3>Số phiếu đã hoàn thành</h3>
-                <p th:text="${stats.completedTickets}">0</p>
-            </div>
-            <div class="kpi-card time">
-                <h3>Thời gian sửa trung bình</h3>
-                <p th:text="${stats.averageRepairTime}">N/A</p>
-            </div>
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <h3>Tổng doanh thu</h3>
+            <p th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</p>
         </div>
-
-        <div class="details-section">
-            <h2>Xem chi tiết:</h2>
-            <ul>
-                <li><a href="#"><i class="fas fa-dollar-sign"></i> Báo cáo doanh thu chi tiết</a></li>
-                <li><a href="#"><i class="fas fa-tools"></i> Thống kê chi tiết sửa chữa</a></li>
-            </ul>
-
-            <h2 style="margin-top: 40px;">Các biểu đồ:</h2>
-            <p>(Khu vực này sẽ được phát triển sau)</p>
+        <div class="kpi-card">
+            <h3>Tổng phiếu sửa</h3>
+            <p th:text="${stats.totalTickets}">0</p>
         </div>
-
+        <div class="kpi-card">
+            <h3>Số phiếu đã hoàn thành</h3>
+            <p th:text="${stats.completedTickets}">0</p>
+        </div>
+        <div class="kpi-card">
+            <h3>Thời gian sửa trung bình</h3>
+            <p th:text="${stats.averageRepairTime}">N/A</p>
+        </div>
     </div>
-	
+
+    <hr style="margin-top: 40px;">
+
+    <div>
+        <h2>Xem chi tiết:</h2>
+        <ul>
+            <li><a href="#">Báo cáo doanh thu</a></li>
+            <li><a href="#">Thống kê sửa chữa</a></li>
+        </ul>
+
+        <h2>Các biểu đồ:</h2>
+        <p>(Khu vực này sẽ được phát triển sau)</p>
+    </div>
+
 </body>
 </html>

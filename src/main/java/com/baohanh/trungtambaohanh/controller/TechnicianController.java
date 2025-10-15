@@ -129,9 +129,7 @@ public class TechnicianController {
                 chiTiet.setDonGia(linhKien.getDonGia());
                 
                 // Thêm vào collection của phiếu
-                //phieu.getChiTietSuaChuaList().add(chiTiet);
-                phieu.addChiTiet(chiTiet);
-                
+                phieu.getChiTietSuaChuaList().add(chiTiet);
                 
                 // Cập nhật tồn kho
                 linhKien.setSoLuongTon(linhKien.getSoLuongTon() - soLuong);

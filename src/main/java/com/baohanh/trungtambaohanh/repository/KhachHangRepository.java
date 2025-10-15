@@ -4,7 +4,11 @@ import com.baohanh.trungtambaohanh.entity.KhachHang;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
-    // Có thể thêm các phương thức truy vấn tùy chỉnh ở đây nếu cần
+    Optional<KhachHang> findByTaiKhoan_TenDangNhap(String tenDangNhap);
+    Optional<KhachHang> findBySoDienThoai(String soDienThoai);
+    Optional<KhachHang> findByEmail(String email);
 }

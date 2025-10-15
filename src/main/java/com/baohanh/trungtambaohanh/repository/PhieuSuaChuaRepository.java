@@ -3,9 +3,7 @@ package com.baohanh.trungtambaohanh.repository;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,18 +17,17 @@ public interface PhieuSuaChuaRepository extends JpaRepository<PhieuSuaChua, Inte
 
     // Đếm số phiếu theo trạng thái
     long countByTrangThai(String trangThai);
+    
+    // Tìm phiếu theo kỹ thuật viên
     List<PhieuSuaChua> findByKyThuatVien_MaNV(Integer maNV);
+    
+    // Tìm phiếu theo khách hàng
+    List<PhieuSuaChua> findByKhachHang_MaKH(Integer maKH);
+    
+    // Tìm phiếu theo khách hàng, sắp xếp theo ngày tiếp nhận giảm dần
+    List<PhieuSuaChua> findByKhachHang_MaKHOrderByNgayTiepNhanDesc(Integer maKH);
     
     // Lấy các phiếu đã hoàn thành và có đủ ngày nhận/ngày xong để tính thời gian
     @Query("SELECT p FROM PhieuSuaChua p WHERE p.ngayTiepNhan IS NOT NULL AND p.ngayHoanThanh IS NOT NULL AND p.trangThai IN ('Đã sửa xong', 'Đã trả khách')")
     List<PhieuSuaChua> findAllCompletedWithTimestamps();
-    
-    
-    @Query("SELECT p FROM PhieuSuaChua p WHERE " +
-            "(:keyword IS NULL OR :keyword = '' OR " +
-            "LOWER(p.khachHang.hoTen) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(p.thietBi.model) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "CAST(p.maPhieu AS string) LIKE CONCAT('%', :keyword, '%')) " +
-            "AND (:status IS NULL OR :status = '' OR p.trangThai = :status)")
-     List<PhieuSuaChua> searchAndFilter(@Param("keyword") String keyword, @Param("status") String status);
 }

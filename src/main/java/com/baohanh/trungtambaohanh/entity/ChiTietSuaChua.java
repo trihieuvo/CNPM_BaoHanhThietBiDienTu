@@ -33,10 +33,10 @@ public class ChiTietSuaChua {
     @Column(name = "don_gia", nullable = false, precision = 38, scale = 2)
     private BigDecimal donGia;
     
-    @Column(name = "thanh_tien", nullable = false, precision = 38, scale = 2)
+    @Column(name = "thanh_tien", precision = 38, scale = 2)
     private BigDecimal thanhTien;
     
-    // TÍNH THÀNH TIỀN TỰ ĐỘNG TRƯỚC KHI LƯU
+    // Tính thành tiền tự động
     @PrePersist
     @PreUpdate
     public void calculateThanhTien() {

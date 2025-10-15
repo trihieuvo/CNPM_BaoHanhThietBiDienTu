@@ -5,10 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ThietBiRepository extends JpaRepository<ThietBi, Integer> {
-
-    // Tìm kiếm thiết bị theo model hoặc hãng sản xuất (không phân biệt chữ hoa/thường)
-    List<ThietBi> findByModelContainingIgnoreCaseOrHangSanXuatContainingIgnoreCase(String model, String hangSanXuat);
+    List<ThietBi> findByKhachHang_MaKH(Integer maKH);
+    Optional<ThietBi> findBySoSerial(String soSerial);
 }
