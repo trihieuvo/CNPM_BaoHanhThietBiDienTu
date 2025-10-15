@@ -34,6 +34,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import com.baohanh.trungtambaohanh.service.TaiKhoanService;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -163,37 +166,38 @@ public class ManagerController {
         return "redirect:/manager/devices";
     }
 
-    // --- CÁC TRANG CHƯA PHÁT TRIỂN (PLACEHOLDER) ---
-
-    // ================= START: CẬP NHẬT TÍNH NĂNG THEO DÕI PHIẾU SỬA =================
+ 
     @GetMapping("/tickets")
     public String showTicketsPage(@RequestParam(value = "keyword", required = false) String keyword,
                                   @RequestParam(value = "status", required = false) String status,
-                                  Model model) {
-        // 1. Lấy danh sách phiếu sửa chữa đã được tìm kiếm và lọc
+                                  Model model, HttpServletRequest request) { // Thêm HttpServletRequest
         List<PhieuSuaChua> filteredTickets = phieuSuaChuaRepository.searchAndFilter(keyword, status);
 
-        // 2. Tính toán các số liệu thống kê (giữ nguyên như cũ)
         long moiTiepNhan = phieuSuaChuaRepository.countByTrangThai("Mới tiếp nhận");
         long dangSuaChua = phieuSuaChuaRepository.countByTrangThai("Đang sửa chữa");
         long choLinhKien = phieuSuaChuaRepository.countByTrangThai("Chờ linh kiện");
         long daHoanThanh = phieuSuaChuaRepository.countByTrangThai("Đã sửa xong") + phieuSuaChuaRepository.countByTrangThai("Đã trả khách");
-        long treHen = 0; // Tạm thời
+        long treHen = 0;
         TicketStatsDto ticketStats = new TicketStatsDto(moiTiepNhan, dangSuaChua, choLinhKien, daHoanThanh, treHen);
 
-        // 3. Đưa dữ liệu vào model
         model.addAttribute("phieuSuaChuaList", filteredTickets);
         model.addAttribute("ticketStats", ticketStats);
-        model.addAttribute("keyword", keyword); // Trả lại keyword để hiển thị trên ô tìm kiếm
-        model.addAttribute("currentStatus", status); // Trả lại status để chọn đúng option trong dropdown
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("currentStatus", status);
 
-        return "manager/tickets";
+        // KIỂM TRA AJAX REQUEST
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/tickets :: results-fragment"; // Trả về fragment
+        }
+
+        return "manager/tickets"; 
     }
-    // ================= END: CẬP NHẬT TÍNH NĂNG THEO DÕI PHIẾU SỬA =================
+ 
 
 
     @GetMapping("/parts")
-    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
+    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword, Model model, HttpServletRequest request) { // Thêm HttpServletRequest
         List<LinhKien> linhKienList;
         if (keyword != null && !keyword.isEmpty()) {
             linhKienList = linhKienRepository.searchByKeyword(keyword);
@@ -204,12 +208,16 @@ public class ManagerController {
         model.addAttribute("linhKienList", linhKienList);
         model.addAttribute("keyword", keyword);
         
-        // Thêm các thuộc tính cần cho modal Thêm/Sửa
         if (!model.containsAttribute("linhKien")) {
             model.addAttribute("linhKien", new LinhKien());
         }
-        // Lấy danh sách loại thiết bị để hiển thị trong dropdown
         model.addAttribute("loaiThietBiList", loaiThietBiRepository.findAll());
+
+        // KIỂM TRA AJAX REQUEST
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/parts :: results-fragment"; // Trả về fragment
+        }
         
         return "manager/parts";
     }
@@ -242,17 +250,23 @@ public class ManagerController {
     
     @GetMapping("/employees")
 	public String showEmployeesPage(@RequestParam(value = "keyword", required = false) String keyword,
-			@RequestParam(value = "vaiTroId", required = false) Integer vaiTroId, Model model) {
+			@RequestParam(value = "vaiTroId", required = false) Integer vaiTroId, Model model, HttpServletRequest request) { // Thêm HttpServletRequest
 		List<NhanVien> nhanVienList = nhanVienRepository.searchAndFilter(keyword, vaiTroId);
 
 		model.addAttribute("nhanVienList", nhanVienList);
-		model.addAttribute("vaiTroList", vaiTroRepository.findAll()); // Dùng cho bộ lọc và modal
+		model.addAttribute("vaiTroList", vaiTroRepository.findAll());
 		model.addAttribute("keyword", keyword);
 		model.addAttribute("currentVaiTroId", vaiTroId);
 
 		if (!model.containsAttribute("nhanVienDto")) {
 			model.addAttribute("nhanVienDto", new NhanVienDto());
 		}
+
+        // KIỂM TRA AJAX REQUEST
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/employees :: results-fragment"; // Trả về fragment
+        }
 
 		return "manager/employees";
     }

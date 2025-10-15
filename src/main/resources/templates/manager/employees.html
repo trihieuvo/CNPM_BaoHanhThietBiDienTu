@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Quản lý Nhân viên</title>
-    <link rel="stylesheet" th:href="@{/css/manager-style.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
@@ -29,7 +29,7 @@
             <div class="search-bar"><i class="fas fa-search"></i><input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo tên, email..."></div>
             <div class="toolbar-actions" style="display: flex; gap: 15px; align-items: center;">
                 <div class="filter-dropdown">
-                    <select name="vaiTroId" onchange="this.form.submit()">
+                    <select name="vaiTroId">
                         <option value="">(Tất cả vai trò)</option>
                         <option th:each="vt : ${vaiTroList}"
                                 th:value="${vt.maVaiTro}"
@@ -53,7 +53,7 @@
                     <th>Hành động</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="results-container" th:fragment="results-fragment">
                  <tr th:if="${nhanVienList.isEmpty()}"><td colspan="7" style="text-align: center;">Không có.</td></tr>
                  <tr th:each="nv : ${nhanVienList}">
                     <td th:text="${nv.maNV}"></td>
@@ -172,6 +172,42 @@
             modalTitle.innerText = isEdit ? 'Chỉnh sửa Nhân viên' : 'Thêm Nhân viên mới';
             if(isEdit) document.getElementById('tenDangNhap').readOnly = true;
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.querySelector('input[name="keyword"]');
+            const roleSelect = document.querySelector('select[name="vaiTroId"]');
+            const resultsContainer = document.getElementById('results-container');
+            let debounceTimer;
+
+            function loadResults() {
+                const keyword = searchInput.value;
+                const vaiTroId = roleSelect.value;
+                const url = `/manager/employees?keyword=${encodeURIComponent(keyword)}&vaiTroId=${encodeURIComponent(vaiTroId)}`;
+
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    resultsContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Lỗi khi tìm kiếm:', error);
+                    resultsContainer.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Có lỗi xảy ra khi tải kết quả.</td></tr>';
+                });
+            }
+
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(loadResults, 350);
+            });
+
+            roleSelect.addEventListener('change', loadResults);
+
+            document.querySelector('.toolbar').addEventListener('submit', function(e) {
+                e.preventDefault();
+            });
+        });
     /*]]>*/
     </script>
 </body>

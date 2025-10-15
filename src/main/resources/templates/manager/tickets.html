@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Theo dõi Tiến độ Phiếu sửa</title>
-    <link rel="stylesheet" th:href="@{/css/manager-style.css}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
     	/* CSS cho Modal */
@@ -55,7 +55,7 @@
 
             <div class="toolbar-actions" style="display: flex; gap: 15px; align-items: center;">
                 <div class="filter-dropdown">
-                     <select name="status" onchange="this.form.submit()">
+                     <select name="status">
                         <option value="">(Tất cả trạng thái)</option>
                         <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
                         <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
@@ -64,44 +64,44 @@
                         <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
                     </select>
                 </div>
-
-                <button type="submit" class="btn-primary">Tìm</button>
             </div>
         </form>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Mã phiếu</th>
-                    <th>Khách hàng</th>
-                    <th>Thiết bị</th>
-                    <th>KTV Phụ trách</th>
-                    <th>Ngày Tiếp Nhận</th>
-                    <th>Ngày Hẹn Trả</th>
-                    <th>Trạng Thái</th>
-                    <th>Hành Động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:if="${phieuSuaChuaList.isEmpty()}">
-                    <td colspan="8" style="text-align: center;">Không có phiếu sửa chữa nào.</td>
-                </tr>
-                <tr th:each="phieu : ${phieuSuaChuaList}">
-                    <td th:text="${phieu.maPhieu}">Mã phiếu</td>
-                    <td th:text="${phieu.khachHang?.hoTen}">Khách hàng</td>
-                    <td th:text="${phieu.thietBi?.model}">Thiết bị</td>
-                    <td th:text="${phieu.kyThuatVien?.hoTen} ?: 'Chưa gán'">KTV</td>
-                    <td th:text="${phieu.ngayTiepNhan != null ? #temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy') : ''}">Ngày nhận</td>
-                    <td th:text="${phieu.ngayTraDuKien != null ? #temporals.format(phieu.ngayTraDuKien, 'dd-MM-yyyy') : ''}">Ngày hẹn</td>
-                    <td th:text="${phieu.trangThai}">Trạng Thái</td>
-                    <td class="action-buttons">
-                        <button class="view-details-btn" th:data-ticket-id="${phieu.maPhieu}" title="Xem chi tiết">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div id="results-container" th:fragment="results-fragment">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Khách hàng</th>
+                        <th>Thiết bị</th>
+                        <th>KTV Phụ trách</th>
+                        <th>Ngày Tiếp Nhận</th>
+                        <th>Ngày Hẹn Trả</th>
+                        <th>Trạng Thái</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${phieuSuaChuaList.isEmpty()}">
+                        <td colspan="8" style="text-align: center;">Không có phiếu sửa chữa nào.</td>
+                    </tr>
+                    <tr th:each="phieu : ${phieuSuaChuaList}">
+                        <td th:text="${phieu.maPhieu}">Mã phiếu</td>
+                        <td th:text="${phieu.khachHang?.hoTen}">Khách hàng</td>
+                        <td th:text="${phieu.thietBi?.model}">Thiết bị</td>
+                        <td th:text="${phieu.kyThuatVien?.hoTen} ?: 'Chưa gán'">KTV</td>
+                        <td th:text="${phieu.ngayTiepNhan != null ? #temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy') : ''}">Ngày nhận</td>
+                        <td th:text="${phieu.ngayTraDuKien != null ? #temporals.format(phieu.ngayTraDuKien, 'dd-MM-yyyy') : ''}">Ngày hẹn</td>
+                        <td th:text="${phieu.trangThai}">Trạng Thái</td>
+                        <td class="action-buttons">
+                            <button class="view-details-btn" th:data-ticket-id="${phieu.maPhieu}" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 	    <div id="details-modal" class="modal">
         <div class="modal-content">
@@ -142,43 +142,68 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('input[name="keyword"]');
+            const statusSelect = document.querySelector('select[name="status"]');
+            const resultsContainer = document.getElementById('results-container');
             const modal = document.getElementById('details-modal');
             const closeBtn = document.querySelector('.close-btn');
+            let debounceTimer;
 
-            // Hàm đóng Modal
-            function closeModal() {
-                modal.style.display = 'none';
+            function loadResults() {
+                const keyword = searchInput.value;
+                const status = statusSelect.value;
+                const url = `/manager/tickets?keyword=${encodeURIComponent(keyword)}&status=${encodeURIComponent(status)}`;
+                
+                fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    resultsContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching results:', error);
+                    resultsContainer.innerHTML = '<p style="color: red; text-align: center;">Lỗi tải dữ liệu.</p>';
+                });
             }
-            closeBtn.onclick = closeModal;
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(loadResults, 350);
+            });
+
+            statusSelect.addEventListener('change', loadResults);
+
+            function closeModal() {
+                if (modal) modal.style.display = 'none';
+            }
+            if (closeBtn) closeBtn.onclick = closeModal;
             window.onclick = function(event) {
                 if (event.target == modal) {
                     closeModal();
                 }
             }
 
-            // Xử lý sự kiện click cho tất cả các nút "Xem chi tiết"
-            document.querySelectorAll('.view-details-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const ticketId = this.dataset.ticketId;
+            resultsContainer.addEventListener('click', function(e) {
+                const viewBtn = e.target.closest('.view-details-btn');
+                if (viewBtn) {
+                    const ticketId = viewBtn.dataset.ticketId;
                     fetch(`/manager/tickets/details/${ticketId}`)
                         .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Không tìm thấy phiếu sửa chữa.');
-                            }
+                            if (!response.ok) throw new Error('Không tìm thấy phiếu sửa chữa.');
                             return response.json();
                         })
                         .then(data => {
                             populateModal(data);
-                            modal.style.display = 'block';
+                            if (modal) modal.style.display = 'block';
                         })
                         .catch(error => {
                             console.error('Lỗi:', error);
                             alert(error.message);
                         });
-                });
+                }
             });
 
-            // Hàm điền dữ liệu vào Modal
             function populateModal(data) {
                 const formatDate = (dateString) => {
                     if (!dateString) return 'Chưa cập nhật';
@@ -191,7 +216,6 @@
                     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
                 };
 
-                // Cập nhật các dòng này để khớp với DTO
                 document.getElementById('modal-title').innerText = `Chi tiết Phiếu Sửa chữa #${data.maPhieu}`;
                 document.getElementById('detail-maPhieu').innerText = data.maPhieu;
                 document.getElementById('detail-trangThai').innerText = data.trangThai;
@@ -204,9 +228,8 @@
                 document.getElementById('detail-tinhTrang').innerText = data.tinhTrangTiepNhan;
                 document.getElementById('detail-tongChiPhi').innerText = formatCurrency(data.tongChiPhi);
 
-                // Điền dữ liệu cho bảng linh kiện (cập nhật tên thuộc tính)
                 const tableBody = document.querySelector('#linh-kien-table tbody');
-                tableBody.innerHTML = ''; // Xóa dữ liệu cũ
+                tableBody.innerHTML = '';
                 if (data.chiTietSuaChuaList && data.chiTietSuaChuaList.length > 0) {
                     data.chiTietSuaChuaList.forEach(item => {
                         const row = `<tr>
