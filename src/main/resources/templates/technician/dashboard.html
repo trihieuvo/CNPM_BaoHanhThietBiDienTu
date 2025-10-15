@@ -5,6 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bảng điều khiển Kỹ thuật viên</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .action-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .delete-btn-link {
+            border: none;
+            background: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            font-family: inherit;
+            font-size: inherit;
+        }
+        .delete-btn-link:hover {
+            color: #dc2626;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .pagination a, .pagination span {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            color: #64748b;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .pagination a:hover {
+            background-color: #f1f5f9;
+        }
+        .pagination .active {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+            font-weight: bold;
+        }
+        .pagination .disabled {
+            color: #cbd5e1;
+            pointer-events: none;
+            background-color: #f8fafc;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,13 +71,16 @@
                 </div>
             </div>
             
-            <div th:if="${congViecList.isEmpty()}" class="text-center" style="padding: 48px 0;">
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+            
+            <div th:if="${congViecPage.empty}" class="text-center" style="padding: 48px 0;">
                 <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
                 <h3 style="color: #64748b;">Chưa có công việc nào</h3>
                 <p class="text-muted">Bạn chưa được giao công việc nào</p>
             </div>
             
-            <table th:if="${!congViecList.isEmpty()}">
+            <table th:unless="${congViecPage.empty}">
                 <thead>
                     <tr>
                         <th>Mã Phiếu</th>
@@ -38,23 +92,48 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="phieu : ${congViecList}">
+                    <tr th:each="phieu : ${congViecPage.content}">
                         <td><strong th:text="${phieu.maPhieu}"></strong></td>
                         <td th:text="${phieu.khachHang.hoTen}"></td>
                         <td th:text="${phieu.thietBi.model}"></td>
                         <td th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></td>
                         <td>
                             <span class="badge" 
-                                  th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' : (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : (${phieu.trangThai == 'Đã sửa xong'} ? 'badge-info' : 'badge-danger'))"
+                                  th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' : (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : (${phieu.trangThai == 'Đã sửa xong' or phieu.trangThai == 'Hoàn thành'} ? 'badge-info' : 'badge-danger'))"
                                   th:text="${phieu.trangThai}">
                             </span>
                         </td>
-                        <td>
+                        <td class="action-cell">
                             <a th:href="@{/technician/cong-viec/{id}(id=${phieu.maPhieu})}" class="link">Xem chi tiết</a>
+                            <th:block th:with="completedStatuses=${#lists.toList({'Đã sửa xong', 'Hoàn thành', 'Đã trả khách'})}">
+                                <div th:if="${#lists.contains(completedStatuses, phieu.trangThai)}">
+                                    <form th:action="@{/technician/cong-viec/delete/{id}(id=${phieu.maPhieu})}" method="post">
+                                        <button type="submit" class="delete-btn-link"
+                                                th:onclick="'return confirm(\'Bạn có chắc chắn muốn xóa phiếu #' + ${phieu.maPhieu} + '? Hành động này không thể hoàn tác.\');'">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </th:block>
                         </td>
                     </tr>
                 </tbody>
             </table>
+
+            <div th:if="${congViecPage.totalPages > 1}" class="pagination">
+                <a th:href="@{/technician/dashboard(page=0)}" th:classappend="${congViecPage.first} ? 'disabled' : ''">« Đầu</a>
+                <a th:href="@{/technician/dashboard(page=${congViecPage.number - 1})}" th:classappend="${congViecPage.first} ? 'disabled' : ''">‹ Trước</a>
+
+                <th:block th:each="i : ${#numbers.sequence(0, congViecPage.totalPages - 1)}">
+                    <a th:if="${i >= congViecPage.number - 2 and i <= congViecPage.number + 2}"
+                       th:href="@{/technician/dashboard(page=${i})}"
+                       th:classappend="${i == congViecPage.number} ? 'active' : ''"
+                       th:text="${i + 1}"></a>
+                </th:block>
+
+                <a th:href="@{/technician/dashboard(page=${congViecPage.number + 1})}" th:classappend="${congViecPage.last} ? 'disabled' : ''">Sau ›</a>
+                <a th:href="@{/technician/dashboard(page=${congViecPage.totalPages - 1})}" th:classappend="${congViecPage.last} ? 'disabled' : ''">Cuối »</a>
+            </div>
         </div>
     </div>
 </body>

@@ -17,25 +17,19 @@
                 <a href="/technician/dashboard" class="btn btn-outline">← Quay lại dashboard</a>
             </div>
             
-            <form th:action="@{/technician/linh-kien}" method="get">
+            <form id="search-form" th:action="@{/technician/linh-kien}" method="get">
                 <div class="search-box">
                     <input type="text" 
                            name="keyword" 
                            th:value="${keyword}"
-                           placeholder="Nhập tên linh kiện..."
-                           style="flex: 1;">
+                           placeholder="Nhập tên linh kiện để tìm kiếm trực tiếp..."
+                           style="flex: 1;"
+                           autocomplete="off">
                     <button type="submit" class="btn">Tìm kiếm</button>
                 </div>
             </form>
             
-            <div th:if="${linhKienList.isEmpty()}" class="text-center" style="padding: 48px 0;">
-                <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
-                <h3 style="color: #64748b;">Không tìm thấy linh kiện</h3>
-                <p class="text-muted" th:if="${keyword}">Không có kết quả cho "<span th:text="${keyword}"></span>"</p>
-                <p class="text-muted" th:unless="${keyword}">Nhập từ khóa để tìm kiếm linh kiện</p>
-            </div>
-            
-            <table th:if="${!linhKienList.isEmpty()}">
+            <table>
                 <thead>
                     <tr>
                         <th>Mã Linh Kiện</th>
@@ -45,25 +39,72 @@
                         <th>Nhà Cung Cấp</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr th:each="lk : ${linhKienList}">
-                        <td><strong th:text="${lk.maLinhKien}"></strong></td>
-                        <td th:text="${lk.tenLinhKien}"></td>
-                        <td>
-                            <span th:text="${#numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT')}"></span>
-                            <span style="color: #64748b; font-size: 13px;"> VNĐ</span>
-                        </td>
-                        <td>
-                            <span class="badge" 
-                                  th:classappend="${lk.soLuongTon > 20} ? 'badge-success' : (${lk.soLuongTon > 0} ? 'badge-warning' : 'badge-danger')"
-                                  th:text="${lk.soLuongTon}">
-                            </span>
-                        </td>
-                        <td th:text="${lk.nhaCungCap}"></td>
-                    </tr>
+                <tbody id="results-container">
+                    <th:block th:fragment="results-list">
+                        <tr th:if="${linhKienList.isEmpty()}">
+                            <td colspan="5" style="text-align: center; padding: 48px 0;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">🔍</div>
+                                <h3 style="color: #64748b;">Không tìm thấy linh kiện</h3>
+                                <p class="text-muted" th:if="${keyword != null and !keyword.isEmpty()}">
+                                    Không có kết quả cho "<span th:text="${keyword}"></span>"
+                                </p>
+                            </td>
+                        </tr>
+                        <tr th:each="lk : ${linhKienList}">
+                            <td><strong th:text="${lk.maLinhKien}"></strong></td>
+                            <td th:text="${lk.tenLinhKien}"></td>
+                            <td>
+                                <span th:text="${#numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT')}"></span>
+                                <span style="color: #64748b; font-size: 13px;"> VNĐ</span>
+                            </td>
+                            <td>
+                                <span class="badge" 
+                                      th:classappend="${lk.soLuongTon > 20} ? 'badge-success' : (${lk.soLuongTon > 0} ? 'badge-warning' : 'badge-danger')"
+                                      th:text="${lk.soLuongTon}">
+                                </span>
+                            </td>
+                            <td th:text="${lk.nhaCungCap}"></td>
+                        </tr>
+                    </th:block>
                 </tbody>
             </table>
         </div>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.querySelector('input[name="keyword"]');
+        const resultsContainer = document.getElementById('results-container');
+        const searchForm = document.getElementById('search-form');
+        let debounceTimer;
+
+        searchInput.addEventListener('input', function () {
+            // Xóa bộ đếm thời gian cũ
+            clearTimeout(debounceTimer);
+            const keyword = this.value;
+
+            // Đặt bộ đếm thời gian mới
+            debounceTimer = setTimeout(() => {
+                const searchUrl = `/technician/linh-kien/search?keyword=${encodeURIComponent(keyword)}`;
+
+                fetch(searchUrl)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Thay thế nội dung của tbody bằng kết quả mới
+                        resultsContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Lỗi khi tìm kiếm:', error);
+                        resultsContainer.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Có lỗi xảy ra khi tải kết quả.</td></tr>';
+                    });
+            }, 300); // Chờ 300ms sau khi người dùng ngừng gõ rồi mới gửi yêu cầu
+        });
+
+        // Ngăn form submit theo cách truyền thống khi nhấn Enter
+        searchForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+        });
+    });
+    </script>
 </body>
 </html>
