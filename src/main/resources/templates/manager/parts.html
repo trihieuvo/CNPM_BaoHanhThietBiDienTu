@@ -5,30 +5,37 @@
     <title>Quản lý Danh mục Linh kiện</title>
     <link rel="stylesheet" th:href="@{/css/manager-style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 550px; border-radius: 8px; position: relative; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; }
+        .action-buttons .edit-btn { margin-right: 15px; }
+    </style>
 </head>
 <body>
     <div th:replace="~{manager/fragments :: sidebar(activePage='parts')}"></div>
 
     <div class="main-content">
         <h1>Quản lý Danh mục Linh kiện</h1>
+        
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}" style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}" style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
+
         <div class="toolbar">
-            <div class="search-bar">
+            <form th:action="@{/manager/parts}" method="get" class="search-bar" style="width: 450px;">
                 <i class="fas fa-search"></i>
-                <input type="text" placeholder="Tìm kiếm theo mã, tên linh kiện...">
-            </div>
-             <div class="filter-dropdown">
-                <select>
-                    <option value="">(Không có)</option>
-                    </select>
-            </div>
-            <button class="btn-primary"><i class="fas fa-plus"></i> Thêm mới</button>
+                <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo mã hoặc tên linh kiện...">
+            </form>
+            <button id="add-btn" class="btn-primary"><i class="fas fa-plus"></i> Thêm mới</button>
         </div>
 
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>STT</th>
-                    <th>Mã linh kiện</th>
+                    <th>Mã LK</th>
                     <th>Tên linh kiện</th>
                     <th>Đơn giá</th>
                     <th>Số lượng tồn</th>
@@ -38,21 +45,133 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>SSD-S M512</td>
-                    <td>Ổ cứng SSD Samsung 512GB</td>
-                    <td>1,200,000đ</td>
-                    <td>50</td>
-                    <td>Samsung Vina</td>
-                    <td>Laptop</td>
+                <tr th:if="${linhKienList.isEmpty()}">
+                    <td colspan="7" style="text-align: center;">Không tìm thấy linh kiện nào.</td>
+                </tr>
+                <tr th:each="lk : ${linhKienList}">
+                    <td th:text="${lk.maLinhKien}"></td>
+                    <td th:text="${lk.tenLinhKien}"></td>
+                    <td th:text="${#numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                    <td th:text="${lk.soLuongTon}"></td>
+                    <td th:text="${lk.nhaCungCap}"></td>
+                    <td th:text="${lk.loaiThietBiTuongThich?.tenLoaiTB}"></td>
                     <td class="action-buttons">
-                        <a href="#"><i class="fas fa-edit"></i></a>
-                        <a href="#" class="delete"><i class="fas fa-trash"></i></a>
+                        <a href="#" class="edit-btn"
+                           th:data-id="${lk.maLinhKien}"
+                           th:data-ten="${lk.tenLinhKien}"
+                           th:data-gia="${lk.donGia}"
+                           th:data-soluong="${lk.soLuongTon}"
+                           th:data-ncc="${lk.nhaCungCap}"
+                           th:data-mota="${lk.moTa}"
+                           th:data-loaitb="${lk.loaiThietBiTuongThich?.maLoaiTB}">
+                           <i class="fas fa-edit"></i> Sửa
+                        </a>
+                        <a th:href="@{/manager/parts/delete/{id}(id=${lk.maLinhKien})}"
+                           class="delete"
+                           onclick="return confirm('Bạn có chắc chắn muốn xóa linh kiện này?');">
+                           <i class="fas fa-trash"></i> Xóa
+                        </a>
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
+
+    <div id="part-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-title">Thêm Linh kiện mới</h2>
+            <form id="part-form" th:action="@{/manager/parts/save}" th:object="${linhKien}" method="post">
+                <input type="hidden" id="maLinhKien" th:field="*{maLinhKien}" />
+                
+                <div class="form-group">
+                    <label for="tenLinhKien">Tên Linh kiện:</label>
+                    <input type="text" id="tenLinhKien" th:field="*{tenLinhKien}" required />
+                </div>
+                <div class="form-group">
+                    <label for="donGia">Đơn giá (VNĐ):</label>
+                    <input type="number" id="donGia" th:field="*{donGia}" required min="0"/>
+                </div>
+                <div class="form-group">
+                    <label for="soLuongTon">Số lượng tồn:</label>
+                    <input type="number" id="soLuongTon" th:field="*{soLuongTon}" required min="0"/>
+                </div>
+                <div class="form-group">
+                    <label for="nhaCungCap">Nhà cung cấp:</label>
+                    <input type="text" id="nhaCungCap" th:field="*{nhaCungCap}" />
+                </div>
+                <div class="form-group">
+                    <label for="loaiThietBiTuongThich">Loại thiết bị tương thích:</label>
+                    <select id="loaiThietBiTuongThich" th:field="*{loaiThietBiTuongThich.maLoaiTB}">
+                        <option value="">-- Chọn loại thiết bị --</option>
+                        <option th:each="loaiTB : ${loaiThietBiList}"
+                                th:value="${loaiTB.maLoaiTB}"
+                                th:text="${loaiTB.tenLoaiTB}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="moTa">Mô tả:</label>
+                    <textarea id="moTa" th:field="*{moTa}" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Lưu lại</button>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        
+        const modal = document.getElementById('part-modal');
+        const addBtn = document.getElementById('add-btn');
+        const closeBtn = document.querySelector('.close-btn');
+        const editBtns = document.querySelectorAll('.edit-btn');
+        const form = document.getElementById('part-form');
+        const modalTitle = document.getElementById('modal-title');
+        
+        function openModal() { modal.style.display = 'block'; }
+        function closeModal() { modal.style.display = 'none'; }
+
+        addBtn.onclick = function() {
+            form.reset();
+            document.getElementById('maLinhKien').value = '';
+            modalTitle.innerText = 'Thêm Linh kiện mới';
+            openModal();
+        }
+
+        editBtns.forEach(btn => {
+            btn.onclick = function(e) {
+                e.preventDefault();
+                form.reset();
+                modalTitle.innerText = 'Chỉnh sửa Linh kiện';
+                document.getElementById('maLinhKien').value = this.dataset.id;
+                document.getElementById('tenLinhKien').value = this.dataset.ten;
+                document.getElementById('donGia').value = this.dataset.gia;
+                document.getElementById('soLuongTon').value = this.dataset.soluong;
+                document.getElementById('nhaCungCap').value = this.dataset.ncc;
+                document.getElementById('moTa').value = this.dataset.mota;
+                document.getElementById('loaiThietBiTuongThich').value = this.dataset.loaitb;
+                openModal();
+            }
+        });
+
+        closeBtn.onclick = closeModal;
+        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+        
+        // --- PHẦN ĐÃ SỬA LỖI ---
+        // Lấy các giá trị từ Thymeleaf một cách an toàn
+        const errorMessage = /*[[${errorMessage}]]*/ null;
+        const hasErrorOnEdit = /*[[${errorMessage != null && linhKien != null && linhKien.maLinhKien != null}]]*/ false;
+
+        // Giờ đây, logic if/else hoàn toàn là JavaScript chuẩn
+        if (hasErrorOnEdit) {
+            modalTitle.innerText = 'Chỉnh sửa Linh kiện';
+            openModal();
+        } else if (errorMessage) {
+            modalTitle.innerText = 'Thêm Linh kiện mới';
+            openModal();
+        }
+
+        /*]]>*/
+    </script>
 </body>
 </html>

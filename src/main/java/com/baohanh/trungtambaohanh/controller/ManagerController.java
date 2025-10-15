@@ -1,13 +1,21 @@
 package com.baohanh.trungtambaohanh.controller;
 
 import com.baohanh.trungtambaohanh.dto.DashboardStatsDto;
+import com.baohanh.trungtambaohanh.dto.LinhKienDetailDto;
+import com.baohanh.trungtambaohanh.dto.NhanVienDto;
+import com.baohanh.trungtambaohanh.dto.PhieuSuaChuaDetailDto;
 import com.baohanh.trungtambaohanh.dto.TicketStatsDto; // IMPORT DTO MỚI
+import com.baohanh.trungtambaohanh.entity.LinhKien;
 import com.baohanh.trungtambaohanh.entity.LoaiThietBi;
+import com.baohanh.trungtambaohanh.entity.NhanVien;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua; // IMPORT PHIEUSUACHUA
+import com.baohanh.trungtambaohanh.entity.TaiKhoan;
 import com.baohanh.trungtambaohanh.repository.LinhKienRepository;
 import com.baohanh.trungtambaohanh.repository.LoaiThietBiRepository;
 import com.baohanh.trungtambaohanh.repository.NhanVienRepository;
 import com.baohanh.trungtambaohanh.repository.PhieuSuaChuaRepository;
+import com.baohanh.trungtambaohanh.repository.TaiKhoanRepository;
+import com.baohanh.trungtambaohanh.repository.VaiTroRepository;
 import com.baohanh.trungtambaohanh.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,10 +23,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import com.baohanh.trungtambaohanh.service.TaiKhoanService;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/manager")
@@ -29,20 +45,47 @@ public class ManagerController {
     private final LinhKienRepository linhKienRepository;
     private final PhieuSuaChuaRepository phieuSuaChuaRepository;
     private final NhanVienRepository nhanVienRepository;
+    private final VaiTroRepository vaiTroRepository;
+    private final TaiKhoanRepository taiKhoanRepository;
+    private final TaiKhoanService taiKhoanService;
 
     @Autowired
     public ManagerController(DashboardService dashboardService,
                              LoaiThietBiRepository loaiThietBiRepository,
                              LinhKienRepository linhKienRepository,
                              PhieuSuaChuaRepository phieuSuaChuaRepository,
-                             NhanVienRepository nhanVienRepository) {
+                             NhanVienRepository nhanVienRepository,
+                             VaiTroRepository vaiTroRepository, 
+                             TaiKhoanRepository taiKhoanRepository, 
+                             TaiKhoanService taiKhoanService) {
         this.dashboardService = dashboardService;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.linhKienRepository = linhKienRepository;
         this.phieuSuaChuaRepository = phieuSuaChuaRepository;
         this.nhanVienRepository = nhanVienRepository;
+        this.vaiTroRepository = vaiTroRepository; 
+        this.taiKhoanRepository = taiKhoanRepository; 
+        this.taiKhoanService = taiKhoanService; 
     }
-
+    
+    
+    @ModelAttribute("managerName")
+    public String addManagerNameToModel() {
+        // Lấy đối tượng Authentication từ context bảo mật
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        // Kiểm tra xem người dùng đã được xác thực hay chưa
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName(); // Lấy tên đăng nhập
+            
+            // Tìm nhân viên tương ứng và trả về tên đầy đủ, hoặc username nếu không thấy
+            return nhanVienRepository.findByTaiKhoan_TenDangNhap(username)
+                    .map(NhanVien::getHoTen)
+                    .orElse(username);
+        }
+        return null; // Trả về null nếu không có ai đăng nhập
+    }
+    
     // Trang chủ của Manager, có thể redirect đến dashboard
     @GetMapping
     public String showManagerHome() {
@@ -120,16 +163,148 @@ public class ManagerController {
 
 
     @GetMapping("/parts")
-    public String showPartsPage(Model model) {
-        // Tạm thời trả về danh sách rỗng
-        model.addAttribute("linhKienList", Collections.emptyList());
-        return "manager/parts"; // Cần tạo file /templates/manager/parts.html
+    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
+        List<LinhKien> linhKienList;
+        if (keyword != null && !keyword.isEmpty()) {
+            linhKienList = linhKienRepository.searchByKeyword(keyword);
+        } else {
+            linhKienList = linhKienRepository.findAll();
+        }
+        
+        model.addAttribute("linhKienList", linhKienList);
+        model.addAttribute("keyword", keyword);
+        
+        // Thêm các thuộc tính cần cho modal Thêm/Sửa
+        if (!model.containsAttribute("linhKien")) {
+            model.addAttribute("linhKien", new LinhKien());
+        }
+        // Lấy danh sách loại thiết bị để hiển thị trong dropdown
+        model.addAttribute("loaiThietBiList", loaiThietBiRepository.findAll());
+        
+        return "manager/parts";
+    }
+    
+    @PostMapping("/parts/save")
+    public String savePart(@ModelAttribute("linhKien") LinhKien linhKien, RedirectAttributes redirectAttributes) {
+        try {
+            String message = (linhKien.getMaLinhKien() == null) ? "Thêm mới linh kiện thành công!" : "Cập nhật linh kiện thành công!";
+            linhKienRepository.save(linhKien);
+            redirectAttributes.addFlashAttribute("successMessage", message);
+        } catch (Exception e) {
+            // Bắt lỗi nếu tên/mã linh kiện đã tồn tại (unique constraint)
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: Tên hoặc mã linh kiện có thể đã tồn tại.");
+            redirectAttributes.addFlashAttribute("linhKien", linhKien); // Trả lại dữ liệu đã nhập
+        }
+        return "redirect:/manager/parts";
+    }
+    @GetMapping("/parts/delete/{id}")
+    public String deletePart(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+        try {
+            linhKienRepository.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Đã xóa linh kiện thành công!");
+        } catch (Exception e) {
+            // Bắt lỗi nếu linh kiện đã được sử dụng trong phiếu sửa chữa
+            redirectAttributes.addFlashAttribute("errorMessage", "Không thể xóa linh kiện này vì đã được sử dụng trong phiếu sửa chữa.");
+        }
+        return "redirect:/manager/parts";
+    }
+    
+    
+    @GetMapping("/employees")
+	public String showEmployeesPage(@RequestParam(value = "keyword", required = false) String keyword,
+			@RequestParam(value = "vaiTroId", required = false) Integer vaiTroId, Model model) {
+		List<NhanVien> nhanVienList = nhanVienRepository.searchAndFilter(keyword, vaiTroId);
+
+		model.addAttribute("nhanVienList", nhanVienList);
+		model.addAttribute("vaiTroList", vaiTroRepository.findAll()); // Dùng cho bộ lọc và modal
+		model.addAttribute("keyword", keyword);
+		model.addAttribute("currentVaiTroId", vaiTroId);
+
+		if (!model.containsAttribute("nhanVienDto")) {
+			model.addAttribute("nhanVienDto", new NhanVienDto());
+		}
+
+		return "manager/employees";
+    }
+    @PostMapping("/employees/save")
+    public String saveEmployee(@ModelAttribute("nhanVienDto") NhanVienDto nhanVienDto,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            taiKhoanService.saveNhanVien(nhanVienDto);
+            String message = (nhanVienDto.getMaNV() == null) ? "Thêm mới nhân viên thành công!" : "Cập nhật thông tin thành công!";
+            redirectAttributes.addFlashAttribute("successMessage", message);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("nhanVienDto", nhanVienDto); // Giữ lại dữ liệu đã nhập
+        }
+        return "redirect:/manager/employees";
     }
 
-    @GetMapping("/employees")
-    public String showEmployeesPage(Model model) {
-        // Tạm thời trả về danh sách rỗng
-        model.addAttribute("nhanVienList", Collections.emptyList());
-        return "manager/employees"; // Cần tạo file /templates/manager/employees.html
+    @GetMapping("/employees/toggle-status/{id}")
+    public String toggleEmployeeStatus(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+        Optional<NhanVien> nhanVienOpt = nhanVienRepository.findById(id);
+        if (nhanVienOpt.isPresent()) {
+            TaiKhoan taiKhoan = nhanVienOpt.get().getTaiKhoan();
+            taiKhoan.setTrangThai(!taiKhoan.isTrangThai()); // Đảo ngược trạng thái
+            taiKhoanRepository.save(taiKhoan);
+            String status = taiKhoan.isTrangThai() ? "Mở khóa" : "Khóa";
+            redirectAttributes.addFlashAttribute("successMessage", status + " tài khoản thành công!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy nhân viên.");
+        }
+        return "redirect:/manager/employees";
+    }
+    
+    
+    
+    @GetMapping("/tickets/details/{id}")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getTicketDetails(@PathVariable("id") Integer id) {
+        Optional<PhieuSuaChua> phieuSuaChuaOpt = phieuSuaChuaRepository.findById(id);
+
+        if (phieuSuaChuaOpt.isPresent()) {
+            PhieuSuaChua phieu = phieuSuaChuaOpt.get();
+            
+            // --- Ánh xạ từ Entity sang DTO để tránh lỗi tham chiếu vòng tròn ---
+            PhieuSuaChuaDetailDto dto = new PhieuSuaChuaDetailDto();
+            dto.setMaPhieu(phieu.getMaPhieu());
+            dto.setTrangThai(phieu.getTrangThai());
+            dto.setTinhTrangTiepNhan(phieu.getTinhTrangTiepNhan());
+            dto.setNgayTiepNhan(phieu.getNgayTiepNhan());
+            dto.setTongChiPhi(phieu.getTongChiPhi());
+
+            if (phieu.getKhachHang() != null) {
+                dto.setKhachHangHoTen(phieu.getKhachHang().getHoTen());
+                dto.setKhachHangSdt(phieu.getKhachHang().getSoDienThoai());
+            }
+
+            if (phieu.getThietBi() != null) {
+                dto.setThietBiHangSanXuat(phieu.getThietBi().getHangSanXuat());
+                dto.setThietBiModel(phieu.getThietBi().getModel());
+                dto.setThietBiSoSerial(phieu.getThietBi().getSoSerial());
+            }
+
+            if (phieu.getKyThuatVien() != null) {
+                dto.setKtvHoTen(phieu.getKyThuatVien().getHoTen());
+            }
+
+            // Ánh xạ danh sách linh kiện
+            List<LinhKienDetailDto> linhKienDtos = phieu.getChiTietSuaChuaList().stream().map(chiTiet -> {
+                LinhKienDetailDto lkDto = new LinhKienDetailDto();
+                if (chiTiet.getLinhKien() != null) {
+                    lkDto.setTenLinhKien(chiTiet.getLinhKien().getTenLinhKien());
+                }
+                lkDto.setSoLuong(chiTiet.getSoLuong());
+                lkDto.setDonGia(chiTiet.getDonGia());
+                lkDto.setThanhTien(chiTiet.getThanhTien());
+                return lkDto;
+            }).collect(Collectors.toList());
+            dto.setChiTietSuaChuaList(linhKienDtos);
+
+            return ResponseEntity.ok(dto);
+        }
+        
+        return ResponseEntity.notFound().build();
     }
 }

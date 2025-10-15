@@ -56,8 +56,8 @@
                 </li>
             </div>
             <div class="user-info">
-                <span><i class="fas fa-user-circle"></i> Manager Name</span>
-                <a th:href="@{/logout}" class="logout-link">
+                <span><i class="fas fa-user-circle"></i> <span th:text="${managerName}">Manager Name</span></span>
+                <a th:href="@{/logout}" class="logout-link" title="Đăng xuất">
                     <i class="fas fa-sign-out-alt"></i>
                 </a>
             </div>
