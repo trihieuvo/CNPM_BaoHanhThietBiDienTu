@@ -1,4 +1,4 @@
-package com.baohanh.trungtambaohanh.controller.receptionist;
+package com.baohanh.trungtambaohanh.controller;
 
 import com.baohanh.trungtambaohanh.entity.KhachHang;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua;
