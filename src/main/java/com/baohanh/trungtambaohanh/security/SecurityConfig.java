@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -30,24 +31,25 @@ public class SecurityConfig {
             .authorizeHttpRequests(authorize -> authorize
                 // Cho phép truy cập công khai
                 .requestMatchers(
-                    "/", 
-                    "/login", 
-                    "/register", 
-                    "/register/save",
-                    "/css/**", 
-                    "/js/**", 
-                    "/images/**", 
-                    "/webjars/**",
-                    "/favicon.ico"
+                    new AntPathRequestMatcher("/"), 
+                    new AntPathRequestMatcher("/login"), 
+                    new AntPathRequestMatcher("/register"), 
+                    new AntPathRequestMatcher("/register/save"),
+                    // THÊM 2 DÒNG NÀY ĐỂ CHO PHÉP TRUY CẬP
+                    new AntPathRequestMatcher("/forgot-password"),
+                    new AntPathRequestMatcher("/reset-password"),
+                    // ===================================
+                    new AntPathRequestMatcher("/css/**"), 
+                    new AntPathRequestMatcher("/js/**")
                 ).permitAll()
                 
-                // Phân quyền theo role
-                .requestMatchers("/manager/**").hasRole("Quản lý")
-                .requestMatchers("/technician/**").hasRole("Kỹ thuật viên")
-                .requestMatchers("/receptionist/**").hasRole("Nhân viên")
-                .requestMatchers("/customer/**").hasRole("Khách hàng")
+                // Phân quyền theo vai trò (role)
+                .requestMatchers(new AntPathRequestMatcher("/manager/**")).hasRole("Quản lý")
+                .requestMatchers(new AntPathRequestMatcher("/technician/**")).hasRole("Kỹ thuật viên")
+                .requestMatchers(new AntPathRequestMatcher("/receptionist/**")).hasRole("Nhân viên")
+                .requestMatchers(new AntPathRequestMatcher("/customer/**")).hasRole("Khách hàng")
                 
-                // Các request khác cần xác thực
+                // Tất cả các request khác đều cần phải xác thực
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -66,10 +68,10 @@ public class SecurityConfig {
                 .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            .userDetailsService(userDetailsService)
-            .headers(headers -> headers
-                .contentTypeOptions(contentType -> contentType.disable())
-            );
+            .exceptionHandling(exception -> exception
+                .accessDeniedPage("/login?access_denied")
+            )
+            .userDetailsService(userDetailsService);
         
         return http.build();
     }
