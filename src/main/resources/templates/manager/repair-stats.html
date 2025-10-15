@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thống kê Sửa chữa</title>
+    <link rel="stylesheet" th:href="@{/css/manager-style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 25px; }
+        .kpi-card { background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .kpi-card h3 { margin: 0 0 10px; color: #6c757d; font-size: 1.1em; }
+        .kpi-card p { font-size: 2em; font-weight: bold; margin: 0; color: #343a40; }
+        .chart-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+    <div th:replace="~{manager/fragments :: sidebar(activePage='repair-stats')}"></div>
+
+    <div class="main-content">
+        <h1>Thống kê Sửa chữa & Hiệu suất</h1>
+
+        <form th:action="@{/manager/repair-stats}" method="get" class="toolbar">
+            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+                <label>Từ:</label> <input type="date" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}" style="padding: 8px;">
+                <label>Đến:</label> <input type="date" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}" style="padding: 8px;">
+                <select name="loaiThietBiId" style="padding: 9px;">
+                    <option value="">Tất cả thiết bị</option>
+                    <option th:each="type : ${deviceTypes}" th:value="${type.maLoaiTB}" th:text="${type.tenLoaiTB}" th:selected="${currentDeviceTypeId == type.maLoaiTB}"></option>
+                </select>
+                <select name="ktvId" style="padding: 9px;">
+                    <option value="">Tất cả KTV</option>
+                    <option th:each="ktv : ${technicians}" th:value="${ktv.maNV}" th:text="${ktv.hoTen}" th:selected="${currentKtvId == ktv.maNV}"></option>
+                </select>
+                <button type="submit" class="btn-primary">Lọc</button>
+            </div>
+        </form>
+        
+        <div class="report-grid">
+            <div class="kpi-card"><h3>Tổng phiếu Tiếp nhận</h3><p th:text="${kpis.tongPhieuTiepNhan}"></p></div>
+            <div class="kpi-card"><h3>Tổng phiếu Hoàn thành</h3><p th:text="${kpis.tongPhieuHoanThanh}"></p></div>
+            <div class="kpi-card"><h3>Thời gian sửa TB</h3><p th:text="${kpis.thoiGianSuaTrungBinh}"></p></div>
+        </div>
+        
+        <div class="report-grid">
+            <div class="chart-container">
+                <h3>Số lượng phiếu theo Trạng thái</h3>
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Phân bổ công việc theo KTV (Hoàn thành)</h3>
+                <canvas id="ktvChart"></canvas>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 30px;">Thống kê sử dụng linh kiện</h2>
+        <table class="data-table">
+            <thead>
+                <tr><th>Tên Linh Kiện</th><th>Tổng Số Lượng Đã Dùng</th><th>Trên Tổng Số Phiếu</th></tr>
+            </thead>
+            <tbody>
+                <tr th:if="${linhKienStats.isEmpty()}"><td colspan="3" style="text-align: center;">Không có dữ liệu.</td></tr>
+                <tr th:each="item : ${linhKienStats}">
+                    <td th:text="${item.tenLinhKien}"></td>
+                    <td th:text="${item.soLuongDaDung}"></td>
+                    <td th:text="${item.soPhieuDaDung}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+        const statusChartData = /*[[${statusChart}]]*/ null;
+        if (statusChartData) {
+            new Chart(document.getElementById('statusChart'), {
+                type: 'bar',
+                data: {
+                    labels: statusChartData.labels,
+                    datasets: [{
+                        label: 'Số lượng phiếu',
+                        data: statusChartData.data,
+                        backgroundColor: '#007bff'
+                    }]
+                }
+            });
+        }
+    
+        const ktvChartData = /*[[${ktvChart}]]*/ null;
+        if (ktvChartData) {
+             new Chart(document.getElementById('ktvChart'), {
+                type: 'pie',
+                data: {
+                    labels: ktvChartData.labels,
+                    datasets: [{
+                        data: ktvChartData.data,
+                        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8']
+                    }]
+                }
+            });
+        }
+    /*]]>*/
+    </script>
+</body>
+</html>

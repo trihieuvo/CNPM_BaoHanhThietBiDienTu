@@ -2,10 +2,10 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Báo cáo và Thống kê</title>
+    <title>Tổng quan</title>
     <link rel="stylesheet" th:href="@{/css/manager-style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .kpi-grid {
             display: grid;
@@ -13,107 +13,141 @@
             gap: 25px;
             margin-bottom: 40px;
         }
-
         .kpi-card {
             background-color: #fff;
             padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
             border-left: 5px solid #007bff;
         }
+        .kpi-card h3 { margin: 0 0 10px; color: #6c757d; font-size: 1.1em; }
+        .kpi-card p { font-size: 2.2em; font-weight: bold; margin: 0; color: #343a40; }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
         
-        .kpi-card.revenue { border-color: #28a745; }
-        .kpi-card.tickets { border-color: #ffc107; }
-        .kpi-card.completed { border-color: #17a2b8; }
-        .kpi-card.time { border-color: #6f42c1; }
-
-        .kpi-card h3 {
-            margin: 0 0 10px;
-            color: #6c757d;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-
-        .kpi-card p {
-            font-size: 2.2em;
-            font-weight: bold;
-            margin: 0;
-            color: #343a40;
-        }
-
-        .details-section {
-            background: #fff;
+        .card {
+            background-color: #fff;
             padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
+        .card h2 { margin-top: 0; font-size: 1.5em; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px;}
 
-        .details-section h2 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 10px;
+        /* --- PHẦN SỬA LỖI BIỂU ĐỒ --- */
+        .chart-wrapper {
+            position: relative;
+            height: 350px; /* Giới hạn chiều cao của container chứa biểu đồ */
+            width: 100%;
         }
+        /* --- KẾT THÚC PHẦN SỬA LỖI --- */
 
-        .details-section ul {
-            list-style: none;
-            padding: 0;
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
-
-        .details-section ul li {
-            margin-bottom: 15px;
-        }
-
-        .details-section ul li a {
+        .shortcut-link {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
             text-decoration: none;
-            color: #007bff;
-            font-size: 1.1em;
+            color: #343a40;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
-
-        .details-section ul li a:hover {
-            text-decoration: underline;
+        .shortcut-link:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+        .shortcut-link i {
+            font-size: 1.5em;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+            color: #007bff;
         }
     </style>
 </head>
 <body>
-
     <div th:replace="~{manager/fragments :: sidebar(activePage='dashboard')}"></div>
 
     <div class="main-content">
-        <h1>Tổng quan và Thống kê</h1>
+        <h1>Tổng quan hệ thống</h1>
 
+        <h2 style="font-size: 1.2em; color: #6c757d; margin-bottom: 15px;">Các chỉ số chính trong tháng</h2>
         <div class="kpi-grid">
-            <div class="kpi-card revenue">
-                <h3>Tổng doanh thu</h3>
-                <p th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'">0 VNĐ</p>
+            <div class="kpi-card">
+                <h3>Doanh thu tháng này</h3>
+                <p th:text="${#numbers.formatDecimal(stats.totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p>
             </div>
-            <div class="kpi-card tickets">
-                <h3>Tổng phiếu sửa</h3>
-                <p th:text="${stats.totalTickets}">0</p>
+            <div class="kpi-card" style="border-color: #28a745;">
+                <h3>Phiếu hoàn thành tháng này</h3>
+                <p th:text="${stats.completedTickets}"></p>
             </div>
-            <div class="kpi-card completed">
-                <h3>Số phiếu đã hoàn thành</h3>
-                <p th:text="${stats.completedTickets}">0</p>
+            <div class="kpi-card" style="border-color: #17a2b8;">
+                <h3>Tổng số phiếu</h3>
+                <p th:text="${stats.totalTickets}"></p>
             </div>
-            <div class="kpi-card time">
-                <h3>Thời gian sửa trung bình</h3>
-                <p th:text="${stats.averageRepairTime}">N/A</p>
+            <div class="kpi-card" style="border-color: #ffc107;">
+                <h3>Thời gian sửa TB</h3>
+                <p th:text="${stats.averageRepairTime}"></p>
             </div>
         </div>
 
-        <div class="details-section">
-            <h2>Xem chi tiết:</h2>
-            <ul>
-                <li><a href="#"><i class="fas fa-dollar-sign"></i> Báo cáo doanh thu chi tiết</a></li>
-                <li><a href="#"><i class="fas fa-tools"></i> Thống kê chi tiết sửa chữa</a></li>
-            </ul>
+        <div class="section-grid">
+            <div class="card">
+                <h2>Tình trạng phiếu sửa (30 ngày gần nhất)</h2>
+                <div class="chart-wrapper">
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                <h2>Báo cáo chi tiết</h2>
+                 <div class="shortcuts-grid">
+                    <a th:href="@{/manager/revenue-report}" class="shortcut-link"><i class="fas fa-dollar-sign"></i> Báo cáo Doanh thu</a>
+                    <a th:href="@{/manager/repair-stats}" class="shortcut-link"><i class="fas fa-chart-line"></i> Thống kê Sửa chữa</a>
+                </div>
+            </div>
 
-            <h2 style="margin-top: 40px;">Các biểu đồ:</h2>
-            <p>(Khu vực này sẽ được phát triển sau)</p>
+            <div class="card">
+                <h2>Nghiệp vụ quản lý</h2>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <a th:href="@{/manager/tickets}" class="shortcut-link"><i class="fas fa-ticket-alt"></i> Theo dõi Phiếu sửa</a>
+                    <a th:href="@{/manager/parts}" class="shortcut-link"><i class="fas fa-cogs"></i> Quản lý Linh kiện</a>
+                    <a th:href="@{/manager/employees}" class="shortcut-link"><i class="fas fa-users"></i> Quản lý Nhân viên</a>
+                    <a th:href="@{/manager/devices}" class="shortcut-link"><i class="fas fa-laptop"></i> Quản lý Loại thiết bị</a>
+                </div>
+            </div>
         </div>
-
     </div>
 	
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+        const statusChartData = /*[[${statusChartData}]]*/ null;
+        if (statusChartData && statusChartData.labels.length > 0) {
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: statusChartData.labels,
+                    datasets: [{
+                        label: 'Số lượng phiếu',
+                        data: statusChartData.data,
+                        backgroundColor: ['#007bff', '#ffc107', '#fd7e14', '#28a745', '#dc3545', '#6f42c1']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    // BỎ maintainAspectRatio ĐỂ BIỂU ĐỒ TỰ CO DÃN THEO WRAPPER
+                    maintainAspectRatio: false 
+                }
+            });
+        }
+    /*]]>*/
+    </script>
 </body>
 </html>

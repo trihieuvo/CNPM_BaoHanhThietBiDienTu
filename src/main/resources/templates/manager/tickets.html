@@ -6,12 +6,31 @@
     <link rel="stylesheet" th:href="@{/css/manager-style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .stat-cards { display: flex; gap: 20px; margin-bottom: 25px; }
-        .stat-card { flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; }
-        .stat-card h3 { margin: 0 0 10px; color: #6c757d; font-size: 1em; }
+    	/* CSS cho Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 15px; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; font-size: 1.5em; }
+        .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 25px; margin-bottom: 20px; }
+        .details-grid p { margin: 0; }
+        .details-grid strong { color: #495057; }
+        
+        /* CSS cho nút xem chi tiết */
+        .view-details-btn { background: none; border: none; cursor: pointer; color: #007bff; font-size: 1em; padding: 5px; }
+        .view-details-btn:hover { color: #0056b3; }
+        
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-left: 4px solid #007bff; }
+        .stat-card h3 { margin: 0 0 10px; color: #6c757d; font-size: 1em; font-weight: 600; }
         .stat-card p { margin: 0; font-size: 2em; font-weight: bold; color: #343a40; }
-        .stat-card.late { background-color: #f8d7da; }
-        .stat-card.late p { color: #721c24; }
+        
+        .stat-card.new { border-color: #17a2b8; }
+        .stat-card.in-progress { border-color: #ffc107; }
+        .stat-card.waiting { border-color: #fd7e14; }
+        .stat-card.completed { border-color: #28a745; }
+        .stat-card.late { border-color: #dc3545; }
     </style>
 </head>
 <body>
@@ -21,19 +40,34 @@
         <h1>Theo dõi Tiến độ Phiếu sửa</h1>
         
         <div class="stat-cards">
-            <div class="stat-card"><h3>Mới tiếp nhận</h3><p>5</p></div>
-            <div class="stat-card"><h3>Đang sửa chữa</h3><p>12</p></div>
-            <div class="stat-card"><h3>Chờ linh kiện</h3><p>3</p></div>
-            <div class="stat-card"><h3>Đã hoàn thành</h3><p>8</p></div>
-            <div class="stat-card late"><h3>Trễ hẹn</h3><p>2</p></div>
+            <div class="stat-card new"><h3>Mới tiếp nhận</h3><p th:text="${ticketStats.moiTiepNhan}">0</p></div>
+            <div class="stat-card in-progress"><h3>Đang sửa chữa</h3><p th:text="${ticketStats.dangSuaChua}">0</p></div>
+            <div class="stat-card waiting"><h3>Chờ linh kiện</h3><p th:text="${ticketStats.choLinhKien}">0</p></div>
+            <div class="stat-card completed"><h3>Đã hoàn thành</h3><p th:text="${ticketStats.daHoanThanh}">0</p></div>
+            <div class="stat-card late"><h3>Trễ hẹn</h3><p th:text="${ticketStats.treHen}">0</p></div>
         </div>
 
-        <div class="toolbar">
-            <div class="search-bar"><i class="fas fa-search"></i><input type="text" placeholder="Tìm theo mã phiếu, khách hàng..."></div>
-            <div class="filter-dropdown">
-                <select><option>(Không có)</option></select>
+        <form th:action="@{/manager/tickets}" method="get" class="toolbar">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo mã phiếu, khách hàng, model...">
             </div>
-        </div>
+
+            <div class="toolbar-actions" style="display: flex; gap: 15px; align-items: center;">
+                <div class="filter-dropdown">
+                     <select name="status" onchange="this.form.submit()">
+                        <option value="">(Tất cả trạng thái)</option>
+                        <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
+                        <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
+                        <option value="Chờ linh kiện" th:selected="${currentStatus == 'Chờ linh kiện'}">Chờ linh kiện</option>
+                        <option value="Đã sửa xong" th:selected="${currentStatus == 'Đã sửa xong'}">Đã sửa xong</option>
+                        <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary">Tìm</button>
+            </div>
+        </form>
 
         <table class="data-table">
             <thead>
@@ -49,9 +83,146 @@
                 </tr>
             </thead>
             <tbody>
-                </tbody>
+                <tr th:if="${phieuSuaChuaList.isEmpty()}">
+                    <td colspan="8" style="text-align: center;">Không có phiếu sửa chữa nào.</td>
+                </tr>
+                <tr th:each="phieu : ${phieuSuaChuaList}">
+                    <td th:text="${phieu.maPhieu}">Mã phiếu</td>
+                    <td th:text="${phieu.khachHang?.hoTen}">Khách hàng</td>
+                    <td th:text="${phieu.thietBi?.model}">Thiết bị</td>
+                    <td th:text="${phieu.kyThuatVien?.hoTen} ?: 'Chưa gán'">KTV</td>
+                    <td th:text="${phieu.ngayTiepNhan != null ? #temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy') : ''}">Ngày nhận</td>
+                    <td th:text="${phieu.ngayTraDuKien != null ? #temporals.format(phieu.ngayTraDuKien, 'dd-MM-yyyy') : ''}">Ngày hẹn</td>
+                    <td th:text="${phieu.trangThai}">Trạng Thái</td>
+                    <td class="action-buttons">
+                        <button class="view-details-btn" th:data-ticket-id="${phieu.maPhieu}" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
         </table>
     </div>
+	    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Chi tiết Phiếu Sửa chữa</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="details-grid">
+                    <p><strong>Mã phiếu:</strong> <span id="detail-maPhieu"></span></p>
+                    <p><strong>Trạng thái:</strong> <span id="detail-trangThai"></span></p>
+                    <p><strong>Khách hàng:</strong> <span id="detail-khachHang"></span></p>
+                    <p><strong>Điện thoại:</strong> <span id="detail-sdt"></span></p>
+                    <p><strong>Thiết bị:</strong> <span id="detail-thietBi"></span></p>
+                    <p><strong>Serial:</strong> <span id="detail-serial"></span></p>
+                    <p><strong>KTV phụ trách:</strong> <span id="detail-ktv"></span></p>
+                    <p><strong>Ngày tiếp nhận:</strong> <span id="detail-ngayNhan"></span></p>
+                </div>
+                <p><strong>Tình trạng tiếp nhận:</strong></p>
+                <p id="detail-tinhTrang" style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 5px;"></p>
+                
+                <h4 style="margin-top: 25px; margin-bottom: 10px;">Linh kiện đã sử dụng:</h4>
+                <table class="data-table" id="linh-kien-table">
+                    <thead>
+                        <tr>
+                            <th>Tên linh kiện</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+                 <h3 style="text-align: right; margin-top: 20px;">Tổng chi phí: <span id="detail-tongChiPhi" style="color: #dc3545;"></span></h3>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('details-modal');
+            const closeBtn = document.querySelector('.close-btn');
 
+            // Hàm đóng Modal
+            function closeModal() {
+                modal.style.display = 'none';
+            }
+            closeBtn.onclick = closeModal;
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    closeModal();
+                }
+            }
+
+            // Xử lý sự kiện click cho tất cả các nút "Xem chi tiết"
+            document.querySelectorAll('.view-details-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ticketId = this.dataset.ticketId;
+                    fetch(`/manager/tickets/details/${ticketId}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Không tìm thấy phiếu sửa chữa.');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            populateModal(data);
+                            modal.style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error('Lỗi:', error);
+                            alert(error.message);
+                        });
+                });
+            });
+
+            // Hàm điền dữ liệu vào Modal
+            function populateModal(data) {
+                const formatDate = (dateString) => {
+                    if (!dateString) return 'Chưa cập nhật';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                };
+                
+                const formatCurrency = (number) => {
+                    if (number == null) return '0 ₫';
+                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
+                };
+
+                // Cập nhật các dòng này để khớp với DTO
+                document.getElementById('modal-title').innerText = `Chi tiết Phiếu Sửa chữa #${data.maPhieu}`;
+                document.getElementById('detail-maPhieu').innerText = data.maPhieu;
+                document.getElementById('detail-trangThai').innerText = data.trangThai;
+                document.getElementById('detail-khachHang').innerText = data.khachHangHoTen || 'N/A';
+                document.getElementById('detail-sdt').innerText = data.khachHangSdt || 'N/A';
+                document.getElementById('detail-thietBi').innerText = `${data.thietBiHangSanXuat || ''} ${data.thietBiModel || 'N/A'}`;
+                document.getElementById('detail-serial').innerText = data.thietBiSoSerial || 'N/A';
+                document.getElementById('detail-ktv').innerText = data.ktvHoTen || 'Chưa gán';
+                document.getElementById('detail-ngayNhan').innerText = formatDate(data.ngayTiepNhan);
+                document.getElementById('detail-tinhTrang').innerText = data.tinhTrangTiepNhan;
+                document.getElementById('detail-tongChiPhi').innerText = formatCurrency(data.tongChiPhi);
+
+                // Điền dữ liệu cho bảng linh kiện (cập nhật tên thuộc tính)
+                const tableBody = document.querySelector('#linh-kien-table tbody');
+                tableBody.innerHTML = ''; // Xóa dữ liệu cũ
+                if (data.chiTietSuaChuaList && data.chiTietSuaChuaList.length > 0) {
+                    data.chiTietSuaChuaList.forEach(item => {
+                        const row = `<tr>
+                            <td>${item.tenLinhKien}</td>
+                            <td>${item.soLuong}</td>
+                            <td>${formatCurrency(item.donGia)}</td>
+                            <td>${formatCurrency(item.thanhTien)}</td>
+                        </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                } else {
+                    const row = '<tr><td colspan="4" style="text-align: center;">Không có linh kiện nào được sử dụng.</td></tr>';
+                    tableBody.innerHTML = row;
+                }
+            }
+        });
+    </script>
 </body>
 </html>
