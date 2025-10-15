@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Báo cáo Doanh thu</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 25px; }
+        .kpi-card { background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+        .kpi-card h3 { margin: 0 0 10px; color: #6c757d; font-size: 1.1em; }
+        .kpi-card p { font-size: 2em; font-weight: bold; margin: 0; color: #343a40; }
+        .chart-container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+    <div th:replace="~{manager/fragments :: sidebar(activePage='revenue-report')}"></div>
+
+    <div class="main-content">
+        <h1>Báo cáo Doanh thu</h1>
+
+        <form th:action="@{/manager/revenue-report}" method="get" class="toolbar">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label for="startDate">Từ ngày:</label>
+                <input type="date" id="startDate" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}" class="form-control" style="padding: 8px;">
+                <label for="endDate">Đến ngày:</label>
+                <input type="date" id="endDate" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}" class="form-control" style="padding: 8px;">
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <label for="ktvId">KTV:</label>
+                <select id="ktvId" name="ktvId" class="form-control" style="padding: 8px;">
+                    <option value="">Tất cả KTV</option>
+                    <option th:each="ktv : ${technicians}"
+                            th:value="${ktv.maNV}"
+                            th:text="${ktv.hoTen}"
+                            th:selected="${currentKtvId == ktv.maNV}"></option>
+                </select>
+            </div>
+            <div class="actions" style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-primary">Xem báo cáo</button>
+                
+                <a th:href="@{/manager/revenue-report/export(startDate=${#temporals.format(startDate, 'yyyy-MM-dd')}, endDate=${#temporals.format(endDate, 'yyyy-MM-dd')}, ktvId=${currentKtvId})}"
+                   class="btn-primary" style="background-color: #28a745; text-decoration: none;">
+                   <i class="fas fa-file-excel"></i> Xuất Excel
+                </a>
+            </div>
+        </form>
+        
+        
+        <div class="report-grid">
+            <div class="kpi-card"><h3>Tổng Doanh thu</h3><p th:text="${#numbers.formatDecimal(kpis.tongDoanhThu, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p></div>
+            <div class="kpi-card"><h3>Số phiếu Hoàn thành</h3><p th:text="${kpis.tongSoPhieuHoanThanh}"></p></div>
+            <div class="kpi-card"><h3>Doanh thu Trung bình / Phiếu</h3><p th:text="${#numbers.formatDecimal(kpis.doanhThuTrungBinh, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></p></div>
+      		<div class="kpi-card"><h3>Linh kiện Doanh thu cao nhất</h3><p th:text="${kpis.linhKienDoanhThuCaoNhat}" style="font-size: 1.5em;"></p></div>
+        </div>
+        
+        <div class="report-grid">
+            <div class="chart-container">
+                <h3>Doanh thu theo ngày</h3>
+                <canvas id="revenueByDayChart"></canvas>
+            </div>
+            <div class="chart-container">
+                 <h3>Tỷ trọng doanh thu theo loại thiết bị</h3>
+                <canvas id="revenueByDeviceTypeChart" style="max-height: 300px; margin: auto;"></canvas>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 30px;">Chi tiết các phiếu đã hoàn thành</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Mã phiếu</th>
+                    <th>Khách hàng</th>
+                    <th>Thiết bị</th>
+                    <th>Ngày hoàn thành</th>
+                    <th>Doanh thu</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${detailedTickets.isEmpty()}"><td colspan="5" style="text-align: center;">Không có dữ liệu trong khoảng thời gian này.</td></tr>
+                <tr th:each="phieu : ${detailedTickets}">
+                    <td th:text="${phieu.maPhieu}"></td>
+                    <td th:text="${phieu.khachHang.hoTen}"></td>
+                    <td th:text="${phieu.thietBi.model}"></td>
+                    <td th:text="${#temporals.format(phieu.ngayHoanThanh, 'dd/MM/yyyy')}"></td>
+                    <td th:text="${#numbers.formatDecimal(phieu.tongChiPhi, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+        // Dữ liệu cho biểu đồ đường
+        const revenueByDayData = /*[[${revenueByDayChart}]]*/ null;
+        if (revenueByDayData) {
+            new Chart(document.getElementById('revenueByDayChart'), {
+                type: 'line',
+                data: {
+                    labels: revenueByDayData.labels,
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: revenueByDayData.data,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true,
+                        tension: 0.1
+                    }]
+                }
+            });
+        }
+    
+        // Dữ liệu cho biểu đồ tròn
+        const revenueByDeviceTypeData = /*[[${revenueByDeviceTypeChart}]]*/ null;
+        if (revenueByDeviceTypeData) {
+             new Chart(document.getElementById('revenueByDeviceTypeChart'), {
+                type: 'pie',
+                data: {
+                    labels: revenueByDeviceTypeData.labels,
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: revenueByDeviceTypeData.data,
+                        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#17a2b8', '#6610f2']
+                    }]
+                }
+            });
+        }
+    /*]]>*/
+    </script>
+</body>
+</html>
