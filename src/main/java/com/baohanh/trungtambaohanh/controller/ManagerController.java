@@ -40,11 +40,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import com.baohanh.trungtambaohanh.dto.ChartDataDto; 
 
 import java.io.ByteArrayInputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -69,6 +72,7 @@ public class ManagerController {
     private final TaiKhoanService taiKhoanService;
     private final BaoCaoService baoCaoService;
     private final ExcelExportService excelExportService;
+    private final PasswordEncoder passwordEncoder;
     
     @Autowired
     public ManagerController(DashboardService dashboardService,
@@ -80,7 +84,8 @@ public class ManagerController {
                              TaiKhoanRepository taiKhoanRepository, 
                              TaiKhoanService taiKhoanService,
                              BaoCaoService baoCaoService,
-                             ExcelExportService excelExportService) {
+                             ExcelExportService excelExportService,
+                             PasswordEncoder passwordEncoder) {
         this.dashboardService = dashboardService;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.linhKienRepository = linhKienRepository;
@@ -91,6 +96,7 @@ public class ManagerController {
         this.taiKhoanService = taiKhoanService; 
         this.baoCaoService = baoCaoService;
         this.excelExportService = excelExportService;
+        this.passwordEncoder = passwordEncoder;
     }
     
     
@@ -459,5 +465,55 @@ public class ManagerController {
         model.addAttribute("currentDeviceTypeId", loaiThietBiId);
         
         return "manager/repair-stats";
+    }
+    @GetMapping("/change-password")
+    public String showChangePasswordForm() {
+        return "manager/change-password";
+    }
+
+    // Xử lý yêu cầu đổi mật khẩu
+    @PostMapping("/change-password")
+    public String processChangePassword(
+            @RequestParam("currentPassword") String currentPassword,
+            @RequestParam("newPassword") String newPassword,
+            @RequestParam("confirmPassword") String confirmPassword,
+            Principal principal,
+            RedirectAttributes redirectAttributes) {
+
+        // Lấy thông tin tài khoản quản lý đang đăng nhập
+        String username = principal.getName();
+        NhanVien manager = nhanVienRepository.findByTaiKhoan_TenDangNhap(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản quản lý."));
+
+        TaiKhoan taiKhoan = manager.getTaiKhoan();
+
+        // 1. Kiểm tra mật khẩu hiện tại có đúng không
+        if (!passwordEncoder.matches(currentPassword, taiKhoan.getMatKhauHash())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu hiện tại không đúng!");
+            return "redirect:/manager/change-password";
+        }
+
+        // 2. Kiểm tra mật khẩu mới có đủ dài không
+        if (newPassword.length() < 6) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu mới phải có ít nhất 6 ký tự.");
+            return "redirect:/manager/change-password";
+        }
+
+        // 3. Kiểm tra mật khẩu mới và mật khẩu xác nhận có khớp không
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu mới và mật khẩu xác nhận không khớp!");
+            return "redirect:/manager/change-password";
+        }
+
+        // 4. Cập nhật mật khẩu mới
+        taiKhoan.setMatKhauHash(passwordEncoder.encode(newPassword));
+        taiKhoanRepository.save(taiKhoan);
+
+        redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
+        return "redirect:/manager/change-password";
+    }
+    @GetMapping("/settings")
+    public String showSettingsPage() {
+        return "manager/settings";
     }
 }

@@ -21,20 +21,40 @@
         <h1>Thống kê Sửa chữa & Hiệu suất</h1>
 
         <form th:action="@{/manager/repair-stats}" method="get" class="toolbar">
-            <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
-                <label>Từ:</label> <input type="date" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}" style="padding: 8px;">
-                <label>Đến:</label> <input type="date" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}" style="padding: 8px;">
-                <select name="loaiThietBiId" style="padding: 9px;">
-                    <option value="">Tất cả thiết bị</option>
-                    <option th:each="type : ${deviceTypes}" th:value="${type.maLoaiTB}" th:text="${type.tenLoaiTB}" th:selected="${currentDeviceTypeId == type.maLoaiTB}"></option>
-                </select>
-                <select name="ktvId" style="padding: 9px;">
-                    <option value="">Tất cả KTV</option>
-                    <option th:each="ktv : ${technicians}" th:value="${ktv.maNV}" th:text="${ktv.hoTen}" th:selected="${currentKtvId == ktv.maNV}"></option>
-                </select>
-                <button type="submit" class="btn-primary">Lọc</button>
-            </div>
-        </form>
+		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+		
+		        <div class="form-group" style="margin-bottom: 0;">
+		            <label>Từ ngày:</label>
+		            <input type="date" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}">
+		        </div>
+		
+		        <div class="form-group" style="margin-bottom: 0;">
+		            <label>Đến ngày:</label>
+		            <input type="date" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}">
+		        </div>
+		
+		        <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+		            <label>Loại thiết bị:</label>
+		            <select name="loaiThietBiId">
+		                <option value="">Tất cả thiết bị</option>
+		                <option th:each="type : ${deviceTypes}" th:value="${type.maLoaiTB}" th:text="${type.tenLoaiTB}" th:selected="${currentDeviceTypeId == type.maLoaiTB}"></option>
+		            </select>
+		        </div>
+		
+		        <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+		            <label>KTV:</label>
+		            <select name="ktvId">
+		                <option value="">Tất cả KTV</option>
+		                <option th:each="ktv : ${technicians}" th:value="${ktv.maNV}" th:text="${ktv.hoTen}" th:selected="${currentKtvId == ktv.maNV}"></option>
+		            </select>
+		        </div>
+		
+		        <div class="toolbar-actions">
+		             <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
+		        </div>
+		
+		    </div>
+		</form>
         
         <div class="report-grid">
             <div class="kpi-card"><h3>Tổng phiếu Tiếp nhận</h3><p th:text="${kpis.tongPhieuTiepNhan}"></p></div>

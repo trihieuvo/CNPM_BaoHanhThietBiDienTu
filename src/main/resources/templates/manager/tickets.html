@@ -47,26 +47,32 @@
             <div class="stat-card late"><h3>Trễ hẹn</h3><p th:text="${ticketStats.treHen}">0</p></div>
         </div>
 
-        <form th:action="@{/manager/tickets}" method="get" class="toolbar">
-            <div class="search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo mã phiếu, khách hàng, model...">
-            </div>
-
-            <div class="toolbar-actions" style="display: flex; gap: 15px; align-items: center;">
-                <div class="filter-dropdown">
-                     <select name="status">
-                        <option value="">(Tất cả trạng thái)</option>
-                        <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
-                        <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
-                        <option value="Chờ linh kiện" th:selected="${currentStatus == 'Chờ linh kiện'}">Chờ linh kiện</option>
-                        <option value="Đã sửa xong" th:selected="${currentStatus == 'Đã sửa xong'}">Đã sửa xong</option>
-                        <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
-                    </select>
-                </div>
-            </div>
-        </form>
-
+      <form th:action="@{/manager/tickets}" method="get" class="toolbar">
+		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+		
+		        <div class="form-group" style="margin-bottom: 0;">
+		            <label for="keyword-search">Tìm kiếm:</label>
+		            <input id="keyword-search" type="text" name="keyword" th:value="${keyword}" placeholder="Mã phiếu, khách hàng...">
+		        </div>
+		
+		        <div class="form-group" style="min-width: 220px; margin-bottom: 0;">
+		            <label for="status-select">Trạng thái:</label>
+		            <select id="status-select" name="status" onchange="this.form.submit()">
+		                <option value="">(Tất cả trạng thái)</option>
+		                <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
+		                <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
+		                <option value="Chờ linh kiện" th:selected="${currentStatus == 'Chờ linh kiện'}">Chờ linh kiện</option>
+		                <option value="Đã sửa xong" th:selected="${currentStatus == 'Đã sửa xong'}">Đã sửa xong</option>
+		                <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
+		            </select>
+		        </div>
+		
+		        <div class="toolbar-actions">
+		            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Tìm</button>
+		        </div>
+		
+		    </div>
+		</form>
         <div id="results-container" th:fragment="results-fragment">
             <table class="data-table">
                 <thead>

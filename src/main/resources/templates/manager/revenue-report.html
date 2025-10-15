@@ -21,31 +21,39 @@
         <h1>Báo cáo Doanh thu</h1>
 
         <form th:action="@{/manager/revenue-report}" method="get" class="toolbar">
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <label for="startDate">Từ ngày:</label>
-                <input type="date" id="startDate" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}" class="form-control" style="padding: 8px;">
-                <label for="endDate">Đến ngày:</label>
-                <input type="date" id="endDate" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}" class="form-control" style="padding: 8px;">
-            </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <label for="ktvId">KTV:</label>
-                <select id="ktvId" name="ktvId" class="form-control" style="padding: 8px;">
-                    <option value="">Tất cả KTV</option>
-                    <option th:each="ktv : ${technicians}"
-                            th:value="${ktv.maNV}"
-                            th:text="${ktv.hoTen}"
-                            th:selected="${currentKtvId == ktv.maNV}"></option>
-                </select>
-            </div>
-            <div class="actions" style="display: flex; gap: 10px;">
-                <button type="submit" class="btn-primary">Xem báo cáo</button>
-                
-                <a th:href="@{/manager/revenue-report/export(startDate=${#temporals.format(startDate, 'yyyy-MM-dd')}, endDate=${#temporals.format(endDate, 'yyyy-MM-dd')}, ktvId=${currentKtvId})}"
-                   class="btn-primary" style="background-color: #28a745; text-decoration: none;">
-                   <i class="fas fa-file-excel"></i> Xuất Excel
-                </a>
-            </div>
-        </form>
+		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+		
+		        <div class="form-group" style="margin-bottom: 0;">
+		            <label for="startDate">Từ ngày:</label>
+		            <input type="date" id="startDate" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}">
+		        </div>
+		
+		        <div class="form-group" style="margin-bottom: 0;">
+		            <label for="endDate">Đến ngày:</label>
+		            <input type="date" id="endDate" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}">
+		        </div>
+		
+		        <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+		            <label for="ktvId">KTV:</label>
+		            <select id="ktvId" name="ktvId">
+		                <option value="">Tất cả KTV</option>
+		                <option th:each="ktv : ${technicians}"
+		                        th:value="${ktv.maNV}"
+		                        th:text="${ktv.hoTen}"
+		                        th:selected="${currentKtvId == ktv.maNV}"></option>
+		            </select>
+		        </div>
+		
+		        <div class="toolbar-actions">
+		            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Xem báo cáo</button>
+		            <a th:href="@{/manager/revenue-report/export(startDate=${#temporals.format(startDate, 'yyyy-MM-dd')}, endDate=${#temporals.format(endDate, 'yyyy-MM-dd')}, ktvId=${currentKtvId})}"
+		               class="btn btn-success" style="text-decoration: none;">
+		               <i class="fas fa-file-excel"></i> Xuất Excel
+		            </a>
+		        </div>
+		
+		    </div>
+		</form>
         
         
         <div class="report-grid">

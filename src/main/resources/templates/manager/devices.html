@@ -42,17 +42,19 @@
                     <td th:text="${loaiTB.maLoaiTB}"></td>
                     <td th:text="${loaiTB.tenLoaiTB}"></td>
                     <td class="action-buttons">
-                        <a href="#" class="edit-btn"
-                           th:data-id="${loaiTB.maLoaiTB}"
-                           th:data-name="${loaiTB.tenLoaiTB}">
-                           <i class="fas fa-edit"></i> Sửa
-                        </a>
-                        <a th:href="@{/manager/devices/delete/{id}(id=${loaiTB.maLoaiTB})}"
-                           class="delete"
-                           onclick="return confirm('Bạn có chắc chắn muốn xóa?');">
-                           <i class="fas fa-trash"></i> Xóa
-                        </a>
-                    </td>
+					    <div style="display: flex; gap: 15px; align-items: center;">
+					        <a href="#" class="edit-btn"
+					           th:data-id="${loaiTB.maLoaiTB}"
+					           th:data-name="${loaiTB.tenLoaiTB}">
+					           <i class="fas fa-edit"></i> Sửa
+					        </a>
+					        <form th:action="@{/manager/devices/delete/{id}(id=${loaiTB.maLoaiTB})}" method="get" style="display: inline;">
+							    <button type="submit" class="btn-delete" onclick="return confirm('Bạn có chắc chắn muốn xóa?');">
+							        <i class="fas fa-trash"></i> Xóa
+							    </button>
+							</form>
+					    </div>
+					</td>
                 </tr>
             </tbody>
         </table>

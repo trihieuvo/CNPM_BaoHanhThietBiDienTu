@@ -25,12 +25,19 @@
         <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}" style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
 
         <div class="toolbar">
-            <form th:action="@{/manager/parts}" method="get" class="search-bar" style="width: 450px;">
-                <i class="fas fa-search"></i>
-                <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo mã hoặc tên linh kiện...">
-            </form>
-            <button id="add-btn" class="btn-primary"><i class="fas fa-plus"></i> Thêm mới</button>
-        </div>
+		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; flex-grow: 1;">
+		        <div class="form-group" style="margin-bottom: 0; min-width: 300px;">
+		            <label for="parts-keyword">Tìm kiếm linh kiện:</label>
+		            <form th:action="@{/manager/parts}" method="get" id="search-form-parts" style="margin:0;">
+		                <input id="parts-keyword" type="text" name="keyword" th:value="${keyword}" placeholder="Nhập mã hoặc tên linh kiện...">
+		            </form>
+		        </div>
+		    </div>
+		
+		    <div class="toolbar-actions">
+		        <button id="add-btn" type="button" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm mới</button>
+		    </div>
+		</div>
 
         <table class="data-table">
             <thead>
@@ -66,11 +73,11 @@
                            th:data-loaitb="${lk.loaiThietBiTuongThich?.maLoaiTB}">
                            <i class="fas fa-edit"></i> Sửa
                         </a>
-                        <a th:href="@{/manager/parts/delete/{id}(id=${lk.maLinhKien})}"
-                           class="delete"
-                           onclick="return confirm('Bạn có chắc chắn muốn xóa linh kiện này?');">
-                           <i class="fas fa-trash"></i> Xóa
-                        </a>
+                        <form th:action="@{/manager/parts/delete/{id}(id=${lk.maLinhKien})}" method="get" style="display: inline;">
+						    <button type="submit" class="btn-delete" onclick="return confirm('Bạn có chắc chắn muốn xóa linh kiện này?');">
+						        <i class="fas fa-trash"></i> Xóa
+						    </button>
+						</form>
                     </td>
                 </tr>
             </tbody>

@@ -26,20 +26,30 @@
         <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}" style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
 
         <form th:action="@{/manager/employees}" method="get" class="toolbar">
-            <div class="search-bar"><i class="fas fa-search"></i><input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo tên, email..."></div>
-            <div class="toolbar-actions" style="display: flex; gap: 15px; align-items: center;">
-                <div class="filter-dropdown">
-                    <select name="vaiTroId">
-                        <option value="">(Tất cả vai trò)</option>
-                        <option th:each="vt : ${vaiTroList}"
-                                th:value="${vt.maVaiTro}"
-                                th:text="${vt.tenVaiTro}"
-                                th:selected="${currentVaiTroId == vt.maVaiTro}"></option>
-                    </select>
-                </div>
-                <button id="add-btn" type="button" class="btn-primary"><i class="fas fa-user-plus"></i> Thêm mới</button>
-            </div>
-        </form>
+		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; flex-grow: 1;">
+		        <div class="form-group" style="margin-bottom: 0; min-width: 300px;">
+		            <label for="employee-keyword">Tìm nhân viên:</label>
+		            <input id="employee-keyword" type="text" name="keyword" th:value="${keyword}" placeholder="Nhập tên hoặc email...">
+		        </div>
+		
+		        <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
+		            <label for="role-select">Vai trò:</label>
+		            <select id="role-select" name="vaiTroId" onchange="this.form.submit()">
+		                <option value="">(Tất cả vai trò)</option>
+		                <option th:each="vt : ${vaiTroList}"
+		                        th:value="${vt.maVaiTro}"
+		                        th:text="${vt.tenVaiTro}"
+		                        th:selected="${currentVaiTroId == vt.maVaiTro}"></option>
+		            </select>
+		        </div>
+		    </div>
+		
+		    <div class="toolbar-actions">
+		        <button id="add-btn" type="button" class="btn btn-primary"><i class="fas fa-user-plus"></i> Thêm mới</button>
+		    </div>
+		
+		    <button type="submit" style="display: none;"></button>
+		</form>
 
         <table class="data-table">
             <thead>
@@ -75,8 +85,14 @@
                            th:data-vaitro="${nv.taiKhoan.vaiTro.maVaiTro}"
                            th:data-trangthai="${nv.taiKhoan.isTrangThai()}"><i class="fas fa-edit"></i></a>
                         
-                        <a th:if="${nv.taiKhoan.isTrangThai()}" th:href="@{/manager/employees/toggle-status/{id}(id=${nv.maNV})}" onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?');" class="delete"><i class="fas fa-user-lock"></i></a>
-                        <a th:unless="${nv.taiKhoan.isTrangThai()}" th:href="@{/manager/employees/toggle-status/{id}(id=${nv.maNV})}" onclick="return confirm('Bạn có chắc muốn mở khóa tài khoản này?');"><i class="fas fa-user-check"></i></a>
+                        <form th:action="@{/manager/employees/toggle-status/{id}(id=${nv.maNV})}" method="get" style="display: inline;">
+						    <button th:if="${nv.taiKhoan.isTrangThai()}" type="submit" class="btn-delete" onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?');">
+						        <i class="fas fa-user-lock"></i>
+						    </button>
+						    <button th:unless="${nv.taiKhoan.isTrangThai()}" type="submit" class="btn-delete" style="color: var(--success-color);" onclick="return confirm('Bạn có chắc muốn mở khóa tài khoản này?');">
+						        <i class="fas fa-user-check"></i>
+						    </button>
+						</form>
                     </td>
                 </tr>
             </tbody>
