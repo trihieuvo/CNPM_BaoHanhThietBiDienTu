@@ -10,6 +10,7 @@ import com.baohanh.trungtambaohanh.repository.NhanVienRepository;
 import com.baohanh.trungtambaohanh.repository.PhieuSuaChuaRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.RequestParam;
+
 @Controller
 @RequestMapping("/technician")
 public class TechnicianController {
@@ -46,21 +48,35 @@ public class TechnicianController {
 		this.chiTietSuaChuaRepository = chiTietSuaChuaRepository;
 	}
 
-	  @GetMapping("/dashboard")
-	    public String showDashboard(Model model, Principal principal, 
-	                                @RequestParam(name = "page", defaultValue = "0") int page,
-	                                @RequestParam(name = "size", defaultValue = "6") int size) {
-	        Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
-	        if (technicianOpt.isPresent()) {
-	            // Lấy dữ liệu theo trang, 10 mục mỗi trang
-	            PageRequest pageable = PageRequest.of(page, size);
-	            Page<PhieuSuaChua> congViecPage = phieuSuaChuaRepository.findByKyThuatVien_MaNV(technicianOpt.get().getMaNV(), pageable);
-	            
-	            model.addAttribute("congViecPage", congViecPage);
-	            return "technician/dashboard";
-	        }
-	        return "redirect:/logout";
-	    }
+	@GetMapping("/dashboard")
+	public String showDashboard(Model model, Principal principal,
+								@RequestParam(name = "page", defaultValue = "0") int page,
+								@RequestParam(name = "size", defaultValue = "6") int size,
+								@RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
+								HttpServletRequest request) {
+		Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+		if (technicianOpt.isPresent()) {
+			PageRequest pageable = PageRequest.of(page, size);
+			Page<PhieuSuaChua> congViecPage;
+
+			if (keyword == null || keyword.isEmpty()) {
+				congViecPage = phieuSuaChuaRepository.findByKyThuatVien_MaNV(technicianOpt.get().getMaNV(), pageable);
+			} else {
+				congViecPage = phieuSuaChuaRepository.searchByKeywordForTechnician(technicianOpt.get().getMaNV(), keyword.toLowerCase(), pageable);
+			}
+
+			model.addAttribute("congViecPage", congViecPage);
+			model.addAttribute("keyword", keyword);
+
+			// Kiểm tra xem đây có phải là yêu cầu AJAX không
+			String requestedWithHeader = request.getHeader("X-Requested-With");
+			if ("XMLHttpRequest".equals(requestedWithHeader)) {
+				return "technician/dashboard :: results-fragment"; // Nếu là AJAX, chỉ trả về fragment
+			}
+		}
+		return "technician/dashboard"; // Nếu là tải trang bình thường, trả về toàn bộ trang
+	}
+
 
 	@GetMapping("/cong-viec/{id}")
 	public String xemCongViec(@PathVariable("id") Integer id, Model model) {
@@ -248,32 +264,5 @@ public class TechnicianController {
 		}
 
 		return "redirect:/technician/cong-viec/" + maPhieu;
-	}
-
-	@GetMapping("/linh-kien")
-	public String traCuuLinhKienPage(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
-		if (keyword != null && !keyword.isEmpty()) {
-			List<LinhKien> ketQua = linhKienRepository.findByTenLinhKienContainingIgnoreCase(keyword);
-			model.addAttribute("linhKienList", ketQua);
-		} else {
-			model.addAttribute("linhKienList", linhKienRepository.findAll());
-		}
-		model.addAttribute("keyword", keyword);
-		return "technician/tra-cuu-linh-kien";
-	}
-
-	@GetMapping("/linh-kien/search")
-	public String searchLinhKien(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
-		List<LinhKien> ketQua;
-		if (keyword != null && !keyword.isEmpty()) {
-			ketQua = linhKienRepository.findByTenLinhKienContainingIgnoreCase(keyword);
-		} else {
-			// Trả về tất cả nếu ô tìm kiếm trống
-			ketQua = linhKienRepository.findAll();
-		}
-		model.addAttribute("linhKienList", ketQua);
-		model.addAttribute("keyword", keyword);
-		// Trả về fragment HTML chứa kết quả
-		return "technician/tra-cuu-linh-kien :: results-list";
 	}
 }
