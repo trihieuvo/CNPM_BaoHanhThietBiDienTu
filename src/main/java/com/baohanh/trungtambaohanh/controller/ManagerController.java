@@ -1,7 +1,9 @@
 package com.baohanh.trungtambaohanh.controller;
 
 import com.baohanh.trungtambaohanh.dto.DashboardStatsDto;
+import com.baohanh.trungtambaohanh.dto.TicketStatsDto; // IMPORT DTO MỚI
 import com.baohanh.trungtambaohanh.entity.LoaiThietBi;
+import com.baohanh.trungtambaohanh.entity.PhieuSuaChua; // IMPORT PHIEUSUACHUA
 import com.baohanh.trungtambaohanh.repository.LinhKienRepository;
 import com.baohanh.trungtambaohanh.repository.LoaiThietBiRepository;
 import com.baohanh.trungtambaohanh.repository.NhanVienRepository;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Collections;
 import java.util.List;
@@ -89,12 +92,32 @@ public class ManagerController {
 
     // --- CÁC TRANG CHƯA PHÁT TRIỂN (PLACEHOLDER) ---
 
+    // ================= START: CẬP NHẬT TÍNH NĂNG THEO DÕI PHIẾU SỬA =================
     @GetMapping("/tickets")
-    public String showTicketsPage(Model model) {
-        // Tạm thời trả về danh sách rỗng để trang không lỗi
-        model.addAttribute("phieuSuaChuaList", Collections.emptyList());
-        return "manager/tickets"; // Cần tạo file /templates/manager/tickets.html
+    public String showTicketsPage(@RequestParam(value = "keyword", required = false) String keyword,
+                                  @RequestParam(value = "status", required = false) String status,
+                                  Model model) {
+        // 1. Lấy danh sách phiếu sửa chữa đã được tìm kiếm và lọc
+        List<PhieuSuaChua> filteredTickets = phieuSuaChuaRepository.searchAndFilter(keyword, status);
+
+        // 2. Tính toán các số liệu thống kê (giữ nguyên như cũ)
+        long moiTiepNhan = phieuSuaChuaRepository.countByTrangThai("Mới tiếp nhận");
+        long dangSuaChua = phieuSuaChuaRepository.countByTrangThai("Đang sửa chữa");
+        long choLinhKien = phieuSuaChuaRepository.countByTrangThai("Chờ linh kiện");
+        long daHoanThanh = phieuSuaChuaRepository.countByTrangThai("Đã sửa xong") + phieuSuaChuaRepository.countByTrangThai("Đã trả khách");
+        long treHen = 0; // Tạm thời
+        TicketStatsDto ticketStats = new TicketStatsDto(moiTiepNhan, dangSuaChua, choLinhKien, daHoanThanh, treHen);
+
+        // 3. Đưa dữ liệu vào model
+        model.addAttribute("phieuSuaChuaList", filteredTickets);
+        model.addAttribute("ticketStats", ticketStats);
+        model.addAttribute("keyword", keyword); // Trả lại keyword để hiển thị trên ô tìm kiếm
+        model.addAttribute("currentStatus", status); // Trả lại status để chọn đúng option trong dropdown
+
+        return "manager/tickets";
     }
+    // ================= END: CẬP NHẬT TÍNH NĂNG THEO DÕI PHIẾU SỬA =================
+
 
     @GetMapping("/parts")
     public String showPartsPage(Model model) {
