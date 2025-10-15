@@ -44,10 +44,7 @@ public class CustomerController {
         if (khachHangOpt.isPresent()) {
             KhachHang khachHang = khachHangOpt.get();
             
-            // Lấy danh sách thiết bị của khách hàng
             List<ThietBi> danhSachThietBi = thietBiRepository.findByKhachHang_MaKH(khachHang.getMaKH());
-            
-            // Lấy danh sách phiếu sửa chữa
             List<PhieuSuaChua> danhSachPhieu = phieuSuaChuaRepository.findByKhachHang_MaKH(khachHang.getMaKH());
             
             model.addAttribute("khachHang", khachHang);
@@ -89,7 +86,6 @@ public class CustomerController {
         if (khachHangOpt.isPresent() && phieuOpt.isPresent()) {
             PhieuSuaChua phieu = phieuOpt.get();
             
-            // Kiểm tra phiếu có thuộc về khách hàng này không
             if (phieu.getKhachHang().getMaKH().equals(khachHangOpt.get().getMaKH())) {
                 model.addAttribute("phieu", phieu);
                 model.addAttribute("chiTietList", phieu.getChiTietSuaChuaList());
@@ -100,7 +96,7 @@ public class CustomerController {
         return "redirect:/customer/dashboard";
     }
 
-    // Tra cứu tình trạng sửa chữa
+    // Tra cứu tình trạng sửa chữa (ĐÃ SỬA LỖI)
     @GetMapping("/tra-cuu-sua-chua")
     public String traCuuSuaChua(@RequestParam(value = "maPhieu", required = false) Integer maPhieu,
                                 Model model, Principal principal) {
@@ -108,6 +104,8 @@ public class CustomerController {
         
         if (khachHangOpt.isPresent()) {
             KhachHang khachHang = khachHangOpt.get();
+            // *** DÒNG SỬA LỖI: Luôn thêm thông tin khách hàng vào model để sidebar hoạt động ***
+            model.addAttribute("khachHang", khachHang); 
             
             if (maPhieu != null) {
                 Optional<PhieuSuaChua> phieuOpt = phieuSuaChuaRepository.findById(maPhieu);
@@ -193,19 +191,16 @@ public class CustomerController {
             if (khachHangOpt.isPresent()) {
                 KhachHang khachHang = khachHangOpt.get();
                 
-                // Kiểm tra mật khẩu cũ
                 if (!passwordEncoder.matches(matKhauCu, khachHang.getTaiKhoan().getMatKhauHash())) {
                     redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu cũ không đúng!");
                     return "redirect:/customer/doi-mat-khau";
                 }
                 
-                // Kiểm tra mật khẩu mới khớp
                 if (!matKhauMoi.equals(xacNhanMatKhau)) {
                     redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu mới không khớp!");
                     return "redirect:/customer/doi-mat-khau";
                 }
                 
-                // Cập nhật mật khẩu
                 khachHang.getTaiKhoan().setMatKhauHash(passwordEncoder.encode(matKhauMoi));
                 khachHangRepository.save(khachHang);
                 
@@ -236,7 +231,6 @@ public class CustomerController {
                              @RequestParam("noiDung") String noiDung,
                              Principal principal,
                              RedirectAttributes redirectAttributes) {
-        // Tính năng này sẽ được mở rộng sau để lưu vào bảng khiếu nại
         redirectAttributes.addFlashAttribute("successMessage", "Đã gửi khiếu nại thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.");
         return "redirect:/customer/dashboard";
     }

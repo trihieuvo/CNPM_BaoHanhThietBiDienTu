@@ -5,19 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thông tin tài khoản</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="container">
+
+    <div th:replace="~{customer/fragments :: sidebar(activePage='thong-tin', khachHang=${khachHang})}"></div>
+
+    <div class="main-content">
         <div class="card">
             <div class="header">
                 <div>
                     <h1>Thông tin tài khoản</h1>
                     <p class="text-muted">Quản lý thông tin cá nhân của bạn</p>
                 </div>
-                <a href="/customer/dashboard" class="btn btn-outline">← Quay lại</a>
-            </div>
+                </div>
 
-            <!-- Thông báo -->
             <div th:if="${successMessage}" class="alert alert-success">
                 <span th:text="${successMessage}"></span>
             </div>
@@ -26,7 +28,6 @@
                 <span th:text="${errorMessage}"></span>
             </div>
 
-            <!-- Thông tin tài khoản -->
             <div class="info-section">
                 <h3>👤 Thông tin cá nhân</h3>
                 <form th:action="@{/customer/cap-nhat-thong-tin}" method="post">
@@ -79,7 +80,6 @@
                 </form>
             </div>
 
-            <!-- Thông tin đăng nhập -->
             <div class="info-section" style="margin-top: 24px;">
                 <h3>🔐 Thông tin đăng nhập</h3>
                 <div class="info-row">
@@ -101,23 +101,9 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Hành động nhanh -->
-            <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #e2e8f0;">
-                <h3 style="margin-bottom: 16px;">⚡ Hành động nhanh</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-                    <a href="/customer/lich-su-bao-hanh" class="btn btn-outline">
-                        📋 Lịch sử bảo hành
-                    </a>
-                    <a href="/customer/tra-cuu-sua-chua" class="btn btn-outline">
-                        🔍 Tra cứu sửa chữa
-                    </a>
-                    <a href="/customer/khieu-nai" class="btn btn-outline">
-                        📝 Gửi khiếu nại
-                    </a>
-                </div>
+            
             </div>
-        </div>
     </div>
+
 </body>
 </html>

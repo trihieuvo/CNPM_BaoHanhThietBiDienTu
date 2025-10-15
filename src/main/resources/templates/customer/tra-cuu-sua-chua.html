@@ -5,72 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tra cứu tình trạng sửa chữa</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .search-box {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-        }
-        .search-box input {
-            flex: 1;
-            padding: 14px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        .search-box input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .result-box {
-            background: #f8fafc;
-            padding: 32px;
-            border-radius: 12px;
-            margin-top: 24px;
-        }
-        .result-header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        .result-header h2 {
-            margin-bottom: 12px;
-        }
-        .info-grid {
-            display: grid;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .guide-box {
-            background: #eff6ff;
-            padding: 24px;
-            border-radius: 12px;
-            margin-top: 32px;
-        }
-        .guide-box h3 {
-            color: #1e40af;
-            margin-bottom: 12px;
-        }
-        .guide-box ul {
-            color: #1e40af;
-            padding-left: 20px;
-        }
-        .guide-box li {
-            margin-bottom: 8px;
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="container">
+    <div th:replace="~{customer/fragments :: sidebar(activePage='tra-cuu', khachHang=${khachHang})}"></div>
+
+    <div class="main-content">
         <div class="card">
             <div class="header">
                 <div>
                     <h1>Tra cứu tình trạng sửa chữa</h1>
                     <p class="text-muted">Nhập mã phiếu để tra cứu</p>
                 </div>
-                <a href="/customer/dashboard" class="btn btn-outline">← Quay lại</a>
             </div>
 
-            <!-- Form tra cứu -->
             <form action="/customer/tra-cuu-sua-chua" method="get">
                 <div class="search-box">
                     <input type="number" 
@@ -81,12 +29,10 @@
                 </div>
             </form>
 
-            <!-- Thông báo lỗi -->
             <div th:if="${errorMessage}" class="alert alert-danger">
                 <span th:text="${errorMessage}"></span>
             </div>
 
-            <!-- Kết quả tra cứu -->
             <div th:if="${phieu}" class="result-box">
                 <div class="result-header">
                     <h2>Phiếu #<span th:text="${phieu.maPhieu}"></span></h2>
@@ -122,7 +68,6 @@
                     </div>
                 </div>
 
-                <!-- Ghi chú kỹ thuật -->
                 <div th:if="${phieu.ghiChuKyThuat != null && !phieu.ghiChuKyThuat.isEmpty()}" 
                      class="note-box">
                     <strong style="color: #92400e;">🔧 Ghi chú kỹ thuật:</strong>
@@ -136,7 +81,6 @@
                 </div>
             </div>
 
-            <!-- Hướng dẫn -->
             <div th:unless="${phieu}" class="guide-box">
                 <h3>💡 Hướng dẫn tra cứu</h3>
                 <ul>
