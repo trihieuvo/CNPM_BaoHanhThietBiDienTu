@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Loại Thiết bị</title>
+    <link rel="stylesheet" th:href="@{/css/manager-style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 15% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 450px; border-radius: 8px; position: relative; }
+        .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .form-group input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{manager/fragments :: sidebar(activePage='devices')}"></div>
+
+    <div class="main-content">
+        <h1>Quản lý Danh mục Loại thiết bị</h1>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <div class="toolbar">
+             <div class="search-bar"></div>
+            <button id="add-btn" class="btn-primary"><i class="fas fa-plus"></i> Thêm Loại Thiết bị</button>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Mã Loại</th>
+                    <th>Tên Loại Thiết bị</th>
+                    <th style="width: 150px;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="loaiTB : ${loaiThietBiList}">
+                    <td th:text="${loaiTB.maLoaiTB}"></td>
+                    <td th:text="${loaiTB.tenLoaiTB}"></td>
+                    <td class="action-buttons">
+                        <a href="#" class="edit-btn"
+                           th:data-id="${loaiTB.maLoaiTB}"
+                           th:data-name="${loaiTB.tenLoaiTB}">
+                           <i class="fas fa-edit"></i> Sửa
+                        </a>
+                        <a th:href="@{/manager/devices/delete/{id}(id=${loaiTB.maLoaiTB})}"
+                           class="delete"
+                           onclick="return confirm('Bạn có chắc chắn muốn xóa?');">
+                           <i class="fas fa-trash"></i> Xóa
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="device-type-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2 id="modal-title">Thêm Loại Thiết bị</h2>
+            <form id="device-type-form" th:action="@{/manager/devices/save}" th:object="${loaiThietBi}" method="post">
+                <input type="hidden" id="maLoaiTB" th:field="*{maLoaiTB}" />
+                <div class="form-group">
+                    <label for="tenLoaiTB">Tên Loại Thiết bị:</label>
+                    <input type="text" id="tenLoaiTB" th:field="*{tenLoaiTB}" required />
+                </div>
+                <button type="submit" class="btn-primary">Lưu lại</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('device-type-modal');
+        const addBtn = document.getElementById('add-btn');
+        const closeBtn = document.querySelector('.close-btn');
+        const editBtns = document.querySelectorAll('.edit-btn');
+        const form = document.getElementById('device-type-form');
+        const modalTitle = document.getElementById('modal-title');
+        
+        function openModal() { modal.style.display = 'block'; }
+        function closeModal() { modal.style.display = 'none'; }
+
+        addBtn.onclick = function() {
+            form.reset();
+            document.getElementById('maLoaiTB').value = '';
+            modalTitle.innerText = 'Thêm Loại Thiết bị';
+            openModal();
+        }
+
+        editBtns.forEach(btn => {
+            btn.onclick = function(e) {
+                e.preventDefault();
+                form.reset();
+                modalTitle.innerText = 'Chỉnh sửa Loại Thiết bị';
+                document.getElementById('maLoaiTB').value = this.dataset.id;
+                document.getElementById('tenLoaiTB').value = this.dataset.name;
+                openModal();
+            }
+        });
+
+        closeBtn.onclick = closeModal;
+        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ thống quản lý bảo hành</title>
+    </head>
+<body>
+    <h1>Hệ thống quản lý bảo hành</h1>
+    <div class="menu-grid">
+        <a th:href="@{/manager/devices}">Quản lý danh mục thiết bị</a>
+        <a th:href="@{/manager/tickets}">Theo dõi tiến độ các phiếu sửa</a>
+        <a th:href="@{/manager/parts}">Quản lý danh mục linh kiện</a>
+        <a th:href="@{/manager/dashboard}">Xem báo cáo và thống kê</a>
+        <a th:href="@{/manager/revenue-report}">Báo cáo doanh thu</a>
+        <a th:href="@{/manager/repair-stats}">Thống kê sửa chữa</a>
+        <a th:href="@{/manager/employees}">Quản lý nhân viên</a>
+    </div>
+</body>
+</html>

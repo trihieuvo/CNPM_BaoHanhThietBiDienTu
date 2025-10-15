@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý Nhân viên</title>
+    <link rel="stylesheet" th:href="@{/css/manager-style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+     <div th:replace="~{manager/fragments :: sidebar(activePage='employees')}"></div>
+
+    <div class="main-content">
+        <h1>Quản lý Nhân viên</h1>
+        <div class="toolbar">
+            <div class="search-bar"><i class="fas fa-search"></i><input type="text" placeholder="Tìm kiếm nhân viên..."></div>
+            <div class="filter-dropdown">
+                <select>
+                    <option value="">(Vai trò)</option>
+                    <option value="admin">Quản lý</option>
+                    <option value="receptionist">Tiếp tân</option>
+                    <option value="technician">Kỹ thuật viên</option>
+                </select>
+            </div>
+            <button class="btn-primary"><i class="fas fa-user-plus"></i> Thêm mới nhân viên</button>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai Trò</th>
+                    <th>Trạng Thái</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                 <tr>
+                    <td>1</td>
+                    <td>Nguyễn Văn A</td>
+                    <td>admin@example.com</td>
+                    <td>0901234567</td>
+                    <td>Quản lý</td>
+                    <td><span class="status status-active">Đang hoạt động</span></td>
+                    <td class="action-buttons">
+                        <a href="#"><i class="fas fa-edit"></i></a>
+                        <a href="#" class="delete"><i class="fas fa-user-lock"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Trần Thị B</td>
+                    <td>technician@example.com</td>
+                    <td>0907654321</td>
+                    <td>Kỹ thuật viên</td>
+                    <td><span class="status status-locked">Đã khoá</span></td>
+                    <td class="action-buttons">
+                        <a href="#"><i class="fas fa-edit"></i></a>
+                        <a href="#" class="delete"><i class="fas fa-user-check"></i></a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

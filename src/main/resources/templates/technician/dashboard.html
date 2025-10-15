@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển Kỹ thuật viên</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <div>
+                    <h1>Bảng điều khiển Kỹ thuật viên</h1>
+                    <p class="text-muted">Danh sách công việc được giao</p>
+                </div>
+                <div>
+                    <a href="/technician/linh-kien" class="btn btn-outline">Tra cứu linh kiện</a>
+                    <a href="/logout" class="btn btn-secondary" style="margin-left: 8px;">Đăng xuất</a>
+                </div>
+            </div>
+            
+            <div th:if="${congViecList.isEmpty()}" class="text-center" style="padding: 48px 0;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                <h3 style="color: #64748b;">Chưa có công việc nào</h3>
+                <p class="text-muted">Bạn chưa được giao công việc nào</p>
+            </div>
+            
+            <table th:if="${!congViecList.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th>Mã Phiếu</th>
+                        <th>Tên Khách Hàng</th>
+                        <th>Thiết Bị</th>
+                        <th>Ngày Tiếp Nhận</th>
+                        <th>Trạng Thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="phieu : ${congViecList}">
+                        <td><strong th:text="${phieu.maPhieu}"></strong></td>
+                        <td th:text="${phieu.khachHang.hoTen}"></td>
+                        <td th:text="${phieu.thietBi.model}"></td>
+                        <td th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></td>
+                        <td>
+                            <span class="badge" 
+                                  th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' : (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : (${phieu.trangThai == 'Đã sửa xong'} ? 'badge-info' : 'badge-danger'))"
+                                  th:text="${phieu.trangThai}">
+                            </span>
+                        </td>
+                        <td>
+                            <a th:href="@{/technician/cong-viec/{id}(id=${phieu.maPhieu})}" class="link">Xem chi tiết</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

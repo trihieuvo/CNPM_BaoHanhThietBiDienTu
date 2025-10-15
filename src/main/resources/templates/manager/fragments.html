@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <div class="sidebar" th:fragment="sidebar(activePage)">
+        <h2>Hệ thống quản lý</h2>
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a th:href="@{/manager/dashboard}" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">
+                    <i class="fas fa-home"></i> Tổng quan
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/manager/devices}" th:classappend="${activePage == 'devices'} ? 'active' : ''">
+                    <i class="fas fa-laptop"></i> Quản lý danh mục thiết bị
+                </a>
+            </li>
+             <li class="nav-item">
+                <a th:href="@{/manager/tickets}" th:classappend="${activePage == 'tickets'} ? 'active' : ''">
+                    <i class="fas fa-ticket-alt"></i> Theo dõi tiến độ các phiếu sửa
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/manager/parts}" th:classappend="${activePage == 'parts'} ? 'active' : ''">
+                    <i class="fas fa-cogs"></i> Quản lý danh mục linh kiện
+                </a>
+            </li>
+
+            <li class="nav-item nav-header">
+                 <span><i class="fas fa-chart-bar"></i> Xem báo cáo và thống kê</span>
+            </li>
+            <li class="nav-item sub-item">
+                <a th:href="@{/manager/revenue-report}" th:classappend="${activePage == 'revenue-report'} ? 'active' : ''">
+                    Báo cáo doanh thu
+                </a>
+            </li>
+            <li class="nav-item sub-item">
+                <a th:href="@{/manager/repair-stats}" th:classappend="${activePage == 'repair-stats'} ? 'active' : ''">
+                    Thống kê sửa chữa
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a th:href="@{/manager/employees}" th:classappend="${activePage == 'employees'} ? 'active' : ''">
+                    <i class="fas fa-users"></i> Quản lý nhân viên
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="nav-list">
+                 <li class="nav-item">
+                    <a th:href="@{/manager/settings}" th:classappend="${activePage == 'settings'} ? 'active' : ''">
+                        <i class="fas fa-cog"></i> Cài đặt
+                    </a>
+                </li>
+            </div>
+            <div class="user-info">
+                <span><i class="fas fa-user-circle"></i> Manager Name</span>
+                <a th:href="@{/logout}" class="logout-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+	<script th:fragment="theme-script">
+        (function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const currentTheme = localStorage.getItem('theme');
+
+            // Function to apply the theme
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-mode');
+                    if (themeToggle) themeToggle.checked = true;
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    if (themeToggle) themeToggle.checked = false;
+                }
+            }
+
+            // Apply the saved theme on initial load
+            applyTheme(currentTheme);
+
+            // Add event listener to the toggle switch (if it exists on the page)
+            if (themeToggle) {
+                themeToggle.addEventListener('change', function() {
+                    let theme = this.checked ? 'dark' : 'light';
+                    localStorage.setItem('theme', theme);
+                    applyTheme(theme);
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

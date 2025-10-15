@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết công việc</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .section-divider {
+            margin: 32px 0;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .parts-section {
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .parts-table {
+            width: 100%;
+            margin-top: 16px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .parts-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .parts-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .parts-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .add-part-form {
+            display: grid;
+            grid-template-columns: 2fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+            margin-top: 16px;
+        }
+        
+        .total-cost {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 16px;
+            text-align: right;
+        }
+        
+        .total-cost h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .total-cost p {
+            margin: 8px 0 0 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 32px;
+            color: #94a3b8;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>Chi tiết Phiếu sửa chữa: <span th:text="${phieu.maPhieu}"></span></h1>
+                <a th:href="@{/technician/dashboard}" class="btn btn-outline">← Quay lại danh sách</a>
+            </div>
+
+            <!-- Thông tin chung -->
+            <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; color: #1e293b;">Thông tin chung</h3>
+                <div style="display: grid; gap: 12px;">
+                    <p><strong>Khách hàng:</strong> <span th:text="${phieu.khachHang.hoTen}"></span></p>
+                    <p><strong>Thiết bị:</strong> <span th:text="${phieu.thietBi.hangSanXuat + ' ' + phieu.thietBi.model}"></span></p>
+                    <p><strong>Tình trạng tiếp nhận:</strong> <span th:text="${phieu.tinhTrangTiepNhan}"></span></p>
+                    <p><strong>Ngày tiếp nhận:</strong> <span th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></span></p>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Phần linh kiện sử dụng -->
+            <div class="parts-section">
+                <h3 style="margin-bottom: 16px; color: #1e293b;">🔧 Linh kiện sử dụng</h3>
+                
+                <!-- Danh sách linh kiện đã thêm -->
+                <div th:if="${chiTietList != null and !chiTietList.isEmpty()}">
+                    <table class="parts-table">
+                        <thead>
+                            <tr>
+                                <th>Tên linh kiện</th>
+                                <th>Số lượng</th>
+                                <th>Đơn giá</th>
+                                <th>Thành tiền</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="ct : ${chiTietList}">
+                                <td><strong th:text="${ct.linhKien.tenLinhKien}"></strong></td>
+                                <td th:text="${ct.soLuong}"></td>
+                                <td>
+                                    <span th:text="${#numbers.formatDecimal(ct.donGia, 0, 'COMMA', 0, 'POINT')}"></span>
+                                    <span style="color: #64748b; font-size: 13px;"> VNĐ</span>
+                                </td>
+                                <td>
+                                    <strong th:text="${#numbers.formatDecimal(ct.thanhTien, 0, 'COMMA', 0, 'POINT')}"></strong>
+                                    <span style="color: #64748b; font-size: 13px;"> VNĐ</span>
+                                </td>
+                                <td>
+                                    <form th:action="@{/technician/cong-viec/{maPhieu}/xoa-linh-kien/{maChiTiet}(maPhieu=${phieu.maPhieu}, maChiTiet=${ct.maChiTiet})}" 
+                                          method="post" 
+                                          style="display: inline;"
+                                          onsubmit="return confirm('Bạn có chắc muốn xóa linh kiện này?');">
+                                        <button type="submit" class="delete-btn">🗑️ Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Tổng chi phí -->
+                    <div class="total-cost">
+                        <h3>Tổng chi phí linh kiện:</h3>
+                        <p>
+                            <span th:text="${#numbers.formatDecimal(phieu.tongChiPhi != null ? phieu.tongChiPhi : 0, 0, 'COMMA', 0, 'POINT')}">0</span>
+                            <span style="font-size: 20px;"> VNĐ</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Trạng thái rỗng -->
+                <div th:if="${chiTietList == null or chiTietList.isEmpty()}" class="empty-state">
+                    <div class="empty-state-icon">📦</div>
+                    <p>Chưa có linh kiện nào được sử dụng</p>
+                </div>
+                
+                <!-- Form thêm linh kiện -->
+                <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #e2e8f0;">
+                    <h4 style="margin-bottom: 12px; color: #1e293b;">➕ Thêm linh kiện mới</h4>
+                    <form th:action="@{/technician/cong-viec/{maPhieu}/them-linh-kien(maPhieu=${phieu.maPhieu})}" 
+                          method="post" 
+                          class="add-part-form">
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="maLinhKien">Chọn linh kiện:</label>
+                            <select id="maLinhKien" name="maLinhKien" required>
+                                <option value="">-- Chọn linh kiện --</option>
+                                <option th:each="lk : ${allLinhKien}" 
+                                        th:value="${lk.maLinhKien}" 
+                                        th:text="${lk.tenLinhKien + ' (Tồn: ' + lk.soLuongTon + ', Giá: ' + #numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT') + ' VNĐ)'}">
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="soLuong">Số lượng:</label>
+                            <input type="number" 
+                                   id="soLuong" 
+                                   name="soLuong" 
+                                   min="1" 
+                                   value="1" 
+                                   required>
+                        </div>
+                        
+                        <button type="submit" class="btn" style="height: fit-content;">➕ Thêm</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Cập nhật trạng thái -->
+            <h3 style="margin-bottom: 16px;">Cập nhật tiến độ</h3>
+            <form th:action="@{/technician/cong-viec/update}" method="post">
+                <input type="hidden" name="maPhieu" th:value="${phieu.maPhieu}">
+                
+                <div class="form-group">
+                    <label for="trangThai">Trạng thái:</label>
+                    <select id="trangThai" name="trangThai" required>
+                        <option value="Đang chẩn đoán" th:selected="${phieu.trangThai == 'Đang chẩn đoán'}">Đang chẩn đoán</option>
+                        <option value="Chờ linh kiện" th:selected="${phieu.trangThai == 'Chờ linh kiện'}">Chờ linh kiện</option>
+                        <option value="Đang sửa chữa" th:selected="${phieu.trangThai == 'Đang sửa chữa'}">Đang sửa chữa</option>
+                        <option value="Đã sửa xong" th:selected="${phieu.trangThai == 'Đã sửa xong'}">Đã sửa xong</option>
+                        <option value="Hoàn thành" th:selected="${phieu.trangThai == 'Hoàn thành'}">Hoàn thành</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ghiChuKyThuat">Ghi chú kỹ thuật:</label>
+                    <textarea id="ghiChuKyThuat" 
+                              name="ghiChuKyThuat" 
+                              rows="6" 
+                              placeholder="Nhập ghi chú về tình trạng thiết bị, các bước sửa chữa đã thực hiện..."
+                              th:text="${phieu.ghiChuKyThuat}"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn">💾 Lưu cập nhật</button>
+                    <a th:href="@{/technician/dashboard}" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+
+            <!-- Hiển thị thông báo -->
+            <div th:if="${successMessage}" class="alert alert-success" style="margin-top: 24px;">
+                <span th:text="${successMessage}"></span>
+            </div>
+            
+            <div th:if="${errorMessage}" class="alert alert-danger" style="margin-top: 24px;">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <!-- Hiển thị ghi chú hiện tại nếu có -->
+            <div th:if="${phieu.ghiChuKyThuat != null and !phieu.ghiChuKyThuat.isEmpty()}" 
+                 style="margin-top: 32px; padding: 20px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px;">
+                <h4 style="margin-bottom: 8px; color: #92400e;">📝 Ghi chú hiện tại:</h4>
+                <p style="color: #78350f; white-space: pre-wrap;" th:text="${phieu.ghiChuKyThuat}"></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
