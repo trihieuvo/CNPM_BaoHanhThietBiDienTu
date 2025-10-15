@@ -45,6 +45,12 @@
                     <i class="fas fa-users"></i> Quản lý nhân viên
                 </a>
             </li>
+            
+            <li class="nav-item">
+                <a th:href="@{/manager/complaints}" th:classappend="${activePage == 'complaints'} ? 'active' : ''">
+                    <i class="fas fa-flag"></i> Quản lý Khiếu nại
+                </a>
+            </li>
         </ul>
         
         <div class="sidebar-footer">

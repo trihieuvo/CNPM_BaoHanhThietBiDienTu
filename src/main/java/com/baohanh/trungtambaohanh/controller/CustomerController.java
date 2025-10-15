@@ -1,9 +1,11 @@
 package com.baohanh.trungtambaohanh.controller;
 
 import com.baohanh.trungtambaohanh.entity.KhachHang;
+import com.baohanh.trungtambaohanh.entity.KhieuNai;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua;
 import com.baohanh.trungtambaohanh.entity.ThietBi;
 import com.baohanh.trungtambaohanh.repository.KhachHangRepository;
+import com.baohanh.trungtambaohanh.repository.KhieuNaiRepository;
 import com.baohanh.trungtambaohanh.repository.PhieuSuaChuaRepository;
 import com.baohanh.trungtambaohanh.repository.ThietBiRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,15 +28,18 @@ public class CustomerController {
     private final ThietBiRepository thietBiRepository;
     private final PhieuSuaChuaRepository phieuSuaChuaRepository;
     private final PasswordEncoder passwordEncoder;
+    private final KhieuNaiRepository khieuNaiRepository;
 
     public CustomerController(KhachHangRepository khachHangRepository,
                             ThietBiRepository thietBiRepository,
                             PhieuSuaChuaRepository phieuSuaChuaRepository,
-                            PasswordEncoder passwordEncoder) {
+                            PasswordEncoder passwordEncoder,
+                            KhieuNaiRepository khieuNaiRepository) {
         this.khachHangRepository = khachHangRepository;
         this.thietBiRepository = thietBiRepository;
         this.phieuSuaChuaRepository = phieuSuaChuaRepository;
         this.passwordEncoder = passwordEncoder;
+        this.khieuNaiRepository = khieuNaiRepository;
     }
 
     // Dashboard - Trang chủ khách hàng
@@ -219,7 +225,13 @@ public class CustomerController {
         Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan_TenDangNhap(principal.getName());
         
         if (khachHangOpt.isPresent()) {
-            model.addAttribute("khachHang", khachHangOpt.get());
+            KhachHang khachHang = khachHangOpt.get();
+            // Lấy danh sách phiếu sửa để khách hàng chọn
+            List<PhieuSuaChua> danhSachPhieu = phieuSuaChuaRepository.findByKhachHang_MaKHOrderByNgayTiepNhanDesc(khachHang.getMaKH());
+            
+            model.addAttribute("khachHang", khachHang);
+            model.addAttribute("danhSachPhieu", danhSachPhieu); // Đưa danh sách phiếu vào model
+            
             return "customer/gui-khieu-nai";
         }
         
@@ -227,11 +239,57 @@ public class CustomerController {
     }
 
     @PostMapping("/khieu-nai")
-    public String guiKhieuNai(@RequestParam("tieuDe") String tieuDe,
+    public String guiKhieuNai(@RequestParam("maPhieu") Integer maPhieu, // Thêm maPhieu
+                             @RequestParam("tieuDe") String tieuDe,
                              @RequestParam("noiDung") String noiDung,
                              Principal principal,
                              RedirectAttributes redirectAttributes) {
-        redirectAttributes.addFlashAttribute("successMessage", "Đã gửi khiếu nại thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.");
-        return "redirect:/customer/dashboard";
+        
+        Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+        Optional<PhieuSuaChua> phieuOpt = phieuSuaChuaRepository.findById(maPhieu);
+
+        if (khachHangOpt.isPresent() && phieuOpt.isPresent()) {
+            // Kiểm tra phiếu này có đúng là của khách hàng đang đăng nhập không
+            if (!phieuOpt.get().getKhachHang().getMaKH().equals(khachHangOpt.get().getMaKH())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Lỗi: Phiếu sửa chữa không hợp lệ.");
+                return "redirect:/customer/khieu-nai";
+            }
+            
+            // Tạo đối tượng KhieuNai mới
+            KhieuNai newComplaint = new KhieuNai();
+            newComplaint.setKhachHang(khachHangOpt.get());
+            newComplaint.setPhieuSuaChua(phieuOpt.get());
+            newComplaint.setTieuDe(tieuDe);
+            newComplaint.setNoiDung(noiDung);
+            newComplaint.setNgayGui(OffsetDateTime.now());
+            newComplaint.setTrangThai("Mới"); // Trạng thái mặc định
+            
+            // Lưu vào database
+            khieuNaiRepository.save(newComplaint);
+
+            redirectAttributes.addFlashAttribute("successMessage", "Đã gửi khiếu nại thành công! Chúng tôi sẽ xử lý trong thời gian sớm nhất.");
+            return "redirect:/customer/dashboard";
+        }
+        
+        redirectAttributes.addFlashAttribute("errorMessage", "Đã có lỗi xảy ra. Vui lòng thử lại.");
+        return "redirect:/customer/khieu-nai";
     }
+    @GetMapping("/lich-su-khieu-nai")
+    public String xemLichSuKhieuNai(Model model, Principal principal) {
+        Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+        
+        if (khachHangOpt.isPresent()) {
+            KhachHang khachHang = khachHangOpt.get();
+            // Gọi phương thức repository mới để lấy danh sách khiếu nại
+            List<KhieuNai> danhSachKhieuNai = khieuNaiRepository.findByKhachHang_MaKHOrderByNgayGuiDesc(khachHang.getMaKH());
+            
+            model.addAttribute("khachHang", khachHang); // Cần cho sidebar
+            model.addAttribute("danhSachKhieuNai", danhSachKhieuNai);
+            
+            return "customer/lich-su-khieu-nai"; // Trả về một file HTML mới
+        }
+        
+        return "redirect:/login";
+    }
+   
 }

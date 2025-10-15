@@ -21,4 +21,11 @@ public interface LinhKienRepository extends JpaRepository<LinhKien, Integer> {
             "LOWER(lk.tenLinhKien) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "CAST(lk.maLinhKien AS string) LIKE CONCAT('%', :keyword, '%')")
      List<LinhKien> searchByKeyword(@Param("keyword") String keyword);
+    
+    @Query("SELECT lk FROM LinhKien lk WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(lk.tenLinhKien) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "CAST(lk.maLinhKien AS string) LIKE CONCAT('%', :keyword, '%'))")
+     // THAY ĐỔI: Thêm Pageable và trả về Page<LinhKien>
+     Page<LinhKien> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

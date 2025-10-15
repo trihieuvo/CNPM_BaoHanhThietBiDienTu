@@ -50,6 +50,16 @@ public interface PhieuSuaChuaRepository extends JpaRepository<PhieuSuaChua, Inte
             "CAST(p.maPhieu AS string) LIKE CONCAT('%', :keyword, '%')) " +
             "AND (:status IS NULL OR :status = '' OR p.trangThai = :status)")
      List<PhieuSuaChua> searchAndFilter(@Param("keyword") String keyword, @Param("status") String status);
+    
+    @Query("SELECT p FROM PhieuSuaChua p WHERE " +
+            "(:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(p.khachHang.hoTen) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(p.thietBi.model) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "CAST(p.maPhieu AS string) LIKE CONCAT('%', :keyword, '%')) " +
+            "AND (:status IS NULL OR :status = '' OR p.trangThai = :status)")
+     // THAY ĐỔI: Chuyển từ List sang Page và thêm Pageable
+     Page<PhieuSuaChua> searchAndFilter(@Param("keyword") String keyword, @Param("status") String status, Pageable pageable);
+    
 
      @Query("SELECT p FROM PhieuSuaChua p WHERE p.trangThai = 'Đã trả khách' " +
             "AND p.ngayHoanThanh BETWEEN :startDate AND :endDate " +

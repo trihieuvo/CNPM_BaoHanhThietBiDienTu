@@ -6,31 +6,85 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-    	/* CSS cho Modal */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
-        .modal-content { background-color: #fff; margin: 10% auto; padding: 30px; border-radius: 8px; width: 90%; max-width: 700px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 15px; margin-bottom: 20px; }
-        .modal-header h2 { margin: 0; font-size: 1.5em; }
-        .close-btn { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 25px; margin-bottom: 20px; }
-        .details-grid p { margin: 0; }
-        .details-grid strong { color: #495057; }
-        
-        /* CSS cho nút xem chi tiết */
-        .view-details-btn { background: none; border: none; cursor: pointer; color: #007bff; font-size: 1em; padding: 5px; }
-        .view-details-btn:hover { color: #0056b3; }
-        
-        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        .stat-card { flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; border-left: 4px solid #007bff; }
-        .stat-card h3 { margin: 0 0 10px; color: #6c757d; font-size: 1em; font-weight: 600; }
-        .stat-card p { margin: 0; font-size: 2em; font-weight: bold; color: #343a40; }
-        
+        /* CSS cho các thẻ thống kê */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        .stat-card h3 {
+            margin: 0 0 10px;
+            color: var(--text-secondary);
+            font-size: 1em;
+            font-weight: 600;
+        }
+        .stat-card p {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
         .stat-card.new { border-color: #17a2b8; }
-        .stat-card.in-progress { border-color: #ffc107; }
-        .stat-card.waiting { border-color: #fd7e14; }
-        .stat-card.completed { border-color: #28a745; }
-        .stat-card.late { border-color: #dc3545; }
+        .stat-card.in-progress { border-color: #f59e0b; }
+        .stat-card.waiting { border-color: #ef4444; }
+        .stat-card.completed { border-color: #10b981; }
+        .stat-card.late { border-color: #9ca3af; }
+
+        /* CSS cho Modal (Cửa sổ chi tiết) */
+        .modal {
+            display: none; position: fixed; z-index: 1001; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: var(--surface);
+            margin: 8% auto;
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 750px;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+        }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px; margin-bottom: 25px;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.6em; }
+        .close-btn { color: #aaa; font-size: 32px; font-weight: bold; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: #333; }
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 30px; /* Tăng khoảng cách cột */
+            margin-bottom: 25px;
+        }
+        .details-grid p { margin: 0; font-size: 15px; }
+        .details-grid strong { color: var(--text-secondary); }
+
+        /* CSS cho Phân trang */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color); }
+        .pagination a, .pagination span { padding: 8px 16px; border: 1px solid var(--border-color); text-decoration: none; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background-color 0.2s; }
+        .pagination a:hover { background-color: #f1f5f9; }
+        .pagination .active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
+        .pagination .disabled { color: #cbd5e1; pointer-events: none; background-color: #f8fafc; }
     </style>
 </head>
 <body>
@@ -41,23 +95,23 @@
         
         <div class="stat-cards">
             <div class="stat-card new"><h3>Mới tiếp nhận</h3><p th:text="${ticketStats.moiTiepNhan}">0</p></div>
-            <div class="stat-card in-progress"><h3>Đang sửa chữa</h3><p th:text="${ticketStats.dangSuaChua}">0</p></div>
+            <div class="stat-card in-progress"><h3>Đang sửa</h3><p th:text="${ticketStats.dangSuaChua}">0</p></div>
             <div class="stat-card waiting"><h3>Chờ linh kiện</h3><p th:text="${ticketStats.choLinhKien}">0</p></div>
-            <div class="stat-card completed"><h3>Đã hoàn thành</h3><p th:text="${ticketStats.daHoanThanh}">0</p></div>
+            <div class="stat-card completed"><h3>Hoàn thành</h3><p th:text="${ticketStats.daHoanThanh}">0</p></div>
             <div class="stat-card late"><h3>Trễ hẹn</h3><p th:text="${ticketStats.treHen}">0</p></div>
         </div>
 
-      <form th:action="@{/manager/tickets}" method="get" class="toolbar">
+      <form id="filter-form" th:action="@{/manager/tickets}" method="get" class="toolbar">
 		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
 		
-		        <div class="form-group" style="margin-bottom: 0;">
+		        <div class="form-group" style="margin-bottom: 0; min-width: 300px;">
 		            <label for="keyword-search">Tìm kiếm:</label>
-		            <input id="keyword-search" type="text" name="keyword" th:value="${keyword}" placeholder="Mã phiếu, khách hàng...">
+		            <input id="keyword-search" type="text" name="keyword" th:value="${keyword}" placeholder="Mã phiếu, khách hàng, thiết bị...">
 		        </div>
 		
 		        <div class="form-group" style="min-width: 220px; margin-bottom: 0;">
 		            <label for="status-select">Trạng thái:</label>
-		            <select id="status-select" name="status" onchange="this.form.submit()">
+		            <select id="status-select" name="status">
 		                <option value="">(Tất cả trạng thái)</option>
 		                <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
 		                <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
@@ -66,13 +120,9 @@
 		                <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
 		            </select>
 		        </div>
-		
-		        <div class="toolbar-actions">
-		            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Tìm</button>
-		        </div>
-		
 		    </div>
 		</form>
+        
         <div id="results-container" th:fragment="results-fragment">
             <table class="data-table">
                 <thead>
@@ -82,34 +132,55 @@
                         <th>Thiết bị</th>
                         <th>KTV Phụ trách</th>
                         <th>Ngày Tiếp Nhận</th>
-                        <th>Ngày Hẹn Trả</th>
                         <th>Trạng Thái</th>
                         <th>Hành Động</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:if="${phieuSuaChuaList.isEmpty()}">
-                        <td colspan="8" style="text-align: center;">Không có phiếu sửa chữa nào.</td>
+                    <tr th:if="${phieuSuaChuaPage.empty}">
+                        <td colspan="7" style="text-align: center; padding: 40px 0;">Không có phiếu sửa chữa nào.</td>
                     </tr>
-                    <tr th:each="phieu : ${phieuSuaChuaList}">
-                        <td th:text="${phieu.maPhieu}">Mã phiếu</td>
-                        <td th:text="${phieu.khachHang?.hoTen}">Khách hàng</td>
-                        <td th:text="${phieu.thietBi?.model}">Thiết bị</td>
-                        <td th:text="${phieu.kyThuatVien?.hoTen} ?: 'Chưa gán'">KTV</td>
-                        <td th:text="${phieu.ngayTiepNhan != null ? #temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy') : ''}">Ngày nhận</td>
-                        <td th:text="${phieu.ngayTraDuKien != null ? #temporals.format(phieu.ngayTraDuKien, 'dd-MM-yyyy') : ''}">Ngày hẹn</td>
-                        <td th:text="${phieu.trangThai}">Trạng Thái</td>
+                    <tr th:each="phieu : ${phieuSuaChuaPage.content}">
+                        <td><strong th:text="${phieu.maPhieu}"></strong></td>
+                        <td th:text="${phieu.khachHang?.hoTen}"></td>
+                        <td th:text="${phieu.thietBi?.model}"></td>
+                        <td th:text="${phieu.kyThuatVien?.hoTen} ?: 'Chưa gán'"></td>
+                        <td th:text="${phieu.ngayTiepNhan != null ? #temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy') : ''}"></td>
+                        <td>
+                            <span class="badge" 
+                                  th:classappend="${phieu.trangThai == 'Đã trả khách' || phieu.trangThai == 'Đã sửa xong'} ? 'badge-success' : 
+                                                  (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : 
+                                                  (${phieu.trangThai == 'Chờ linh kiện'} ? 'badge-danger' : 'badge-info'))"
+                                  th:text="${phieu.trangThai}">
+                            </span>
+                        </td>
                         <td class="action-buttons">
                             <button class="view-details-btn" th:data-ticket-id="${phieu.maPhieu}" title="Xem chi tiết">
-                                <i class="fas fa-eye"></i>
+                                <i class="fas fa-eye"></i> Xem
                             </button>
                         </td>
                     </tr>
                 </tbody>
             </table>
+            
+            <div th:if="${phieuSuaChuaPage.totalPages > 1}" class="pagination">
+                <a th:href="@{/manager/tickets(keyword=${keyword}, status=${currentStatus}, page=0)}" th:classappend="${phieuSuaChuaPage.first} ? 'disabled' : ''">« Đầu</a>
+                <a th:href="@{/manager/tickets(keyword=${keyword}, status=${currentStatus}, page=${phieuSuaChuaPage.number - 1})}" th:classappend="${phieuSuaChuaPage.first} ? 'disabled' : ''">‹ Trước</a>
+    
+                <th:block th:each="i : ${#numbers.sequence(0, phieuSuaChuaPage.totalPages - 1)}">
+                    <a th:if="${i >= phieuSuaChuaPage.number - 2 and i <= phieuSuaChuaPage.number + 2}"
+                       th:href="@{/manager/tickets(keyword=${keyword}, status=${currentStatus}, page=${i})}"
+                       th:classappend="${i == phieuSuaChuaPage.number} ? 'active' : ''"
+                       th:text="${i + 1}"></a>
+                </th:block>
+    
+                <a th:href="@{/manager/tickets(keyword=${keyword}, status=${currentStatus}, page=${phieuSuaChuaPage.number + 1})}" th:classappend="${phieuSuaChuaPage.last} ? 'disabled' : ''">Sau ›</a>
+                <a th:href="@{/manager/tickets(keyword=${keyword}, status=${currentStatus}, page=${phieuSuaChuaPage.totalPages - 1})}" th:classappend="${phieuSuaChuaPage.last} ? 'disabled' : ''">Cuối »</a>
+            </div>
         </div>
     </div>
-	    <div id="details-modal" class="modal">
+    
+    <div id="details-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modal-title">Chi tiết Phiếu Sửa chữa</h2>
@@ -127,7 +198,7 @@
                     <p><strong>Ngày tiếp nhận:</strong> <span id="detail-ngayNhan"></span></p>
                 </div>
                 <p><strong>Tình trạng tiếp nhận:</strong></p>
-                <p id="detail-tinhTrang" style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 5px;"></p>
+                <p id="detail-tinhTrang" style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 5px; white-space: pre-wrap;"></p>
                 
                 <h4 style="margin-top: 25px; margin-bottom: 10px;">Linh kiện đã sử dụng:</h4>
                 <table class="data-table" id="linh-kien-table">
@@ -139,58 +210,48 @@
                             <th>Thành tiền</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        </tbody>
+                    <tbody></tbody>
                 </table>
-                 <h3 style="text-align: right; margin-top: 20px;">Tổng chi phí: <span id="detail-tongChiPhi" style="color: #dc3545;"></span></h3>
+                 <h3 style="text-align: right; margin-top: 20px;">Tổng chi phí: <span id="detail-tongChiPhi" style="color: var(--danger-color);"></span></h3>
             </div>
         </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.querySelector('input[name="keyword"]');
-            const statusSelect = document.querySelector('select[name="status"]');
-            const resultsContainer = document.getElementById('results-container');
+            const searchInput = document.getElementById('keyword-search');
+            const statusSelect = document.getElementById('status-select');
+            const mainContent = document.querySelector('.main-content');
             const modal = document.getElementById('details-modal');
             const closeBtn = document.querySelector('.close-btn');
             let debounceTimer;
 
-            function loadResults() {
+            function loadResults(page = 0) {
                 const keyword = searchInput.value;
                 const status = statusSelect.value;
-                const url = `/manager/tickets?keyword=${encodeURIComponent(keyword)}&status=${encodeURIComponent(status)}`;
+                const url = `/manager/tickets?keyword=${encodeURIComponent(keyword)}&status=${encodeURIComponent(status)}&page=${page}`;
                 
-                fetch(url, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(response => response.text())
                 .then(html => {
-                    resultsContainer.innerHTML = html;
+                    const resultsContainer = document.getElementById('results-container');
+                    if (resultsContainer) resultsContainer.innerHTML = html;
                 })
-                .catch(error => {
-                    console.error('Error fetching results:', error);
-                    resultsContainer.innerHTML = '<p style="color: red; text-align: center;">Lỗi tải dữ liệu.</p>';
-                });
+                .catch(error => console.error('Error fetching results:', error));
             }
 
-            searchInput.addEventListener('input', function () {
+            searchInput.addEventListener('input', () => {
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(loadResults, 350);
+                debounceTimer = setTimeout(() => loadResults(0), 350);
             });
 
-            statusSelect.addEventListener('change', loadResults);
+            statusSelect.addEventListener('change', () => loadResults(0));
 
-            function closeModal() {
-                if (modal) modal.style.display = 'none';
-            }
+            function closeModal() { if (modal) modal.style.display = 'none'; }
             if (closeBtn) closeBtn.onclick = closeModal;
-            window.onclick = function(event) {
-                if (event.target == modal) {
-                    closeModal();
-                }
-            }
+            window.onclick = function(event) { if (event.target == modal) closeModal(); }
 
-            resultsContainer.addEventListener('click', function(e) {
+            mainContent.addEventListener('click', function(e) {
+                // Xử lý mở modal
                 const viewBtn = e.target.closest('.view-details-btn');
                 if (viewBtn) {
                     const ticketId = viewBtn.dataset.ticketId;
@@ -207,6 +268,14 @@
                             console.error('Lỗi:', error);
                             alert(error.message);
                         });
+                }
+
+                // Xử lý click phân trang
+                if (e.target.matches('.pagination a') && !e.target.classList.contains('disabled')) {
+                    e.preventDefault();
+                    const url = new URL(e.target.href);
+                    const page = url.searchParams.get('page');
+                    loadResults(page);
                 }
             });
 
@@ -247,8 +316,7 @@
                         tableBody.innerHTML += row;
                     });
                 } else {
-                    const row = '<tr><td colspan="4" style="text-align: center;">Không có linh kiện nào được sử dụng.</td></tr>';
-                    tableBody.innerHTML = row;
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Không có linh kiện nào được sử dụng.</td></tr>';
                 }
             }
         });

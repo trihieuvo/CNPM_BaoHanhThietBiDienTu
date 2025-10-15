@@ -6,13 +6,24 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 10% auto; padding: 30px; border: 1px solid #888; width: 80%; max-width: 550px; border-radius: 8px; position: relative; }
-        .close-btn { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; }
-        .action-buttons .edit-btn { margin-right: 15px; }
+        .modal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s; }
+        .modal-content { background-color: #fff; margin: 8% auto; padding: 30px; width: 90%; max-width: 550px; border-radius: 12px; position: relative; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
+        .close-btn { color: #aaa; position: absolute; top: 15px; right: 20px; font-size: 32px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: #333; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color); }
+        .pagination a, .pagination span { padding: 8px 16px; border: 1px solid var(--border-color); text-decoration: none; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background-color 0.2s; }
+        .pagination a:hover { background-color: #f1f5f9; }
+        .pagination .active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
+        .pagination .disabled { color: #cbd5e1; pointer-events: none; background-color: #f8fafc; }
+
+        .btn-delete { background: none; border: none; color: var(--danger-color); cursor: pointer; padding: 5px; font-size: 1em; }
+        .btn-delete:hover { color: #b91c1c; }
+        .edit-btn { text-decoration: none; color: var(--primary-color); }
+        .edit-btn:hover { color: var(--primary-hover); }
     </style>
 </head>
 <body>
@@ -21,87 +32,104 @@
     <div class="main-content">
         <h1>Quản lý Danh mục Linh kiện</h1>
         
-        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}" style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
-        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}" style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
         <div class="toolbar">
-		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; flex-grow: 1;">
-		        <div class="form-group" style="margin-bottom: 0; min-width: 300px;">
-		            <label for="parts-keyword">Tìm kiếm linh kiện:</label>
-		            <form th:action="@{/manager/parts}" method="get" id="search-form-parts" style="margin:0;">
-		                <input id="parts-keyword" type="text" name="keyword" th:value="${keyword}" placeholder="Nhập mã hoặc tên linh kiện...">
-		            </form>
+            <form id="search-form" th:action="@{/manager/parts}" method="get" class="search-bar" style="width: 450px;">
+                
+                
+                <div class="form-group" style="margin-bottom: 0; min-width: 300px;">
+		            <label for="keyword-search">Tìm kiếm:</label>
+		            <input type="text" name="keyword" th:value="${keyword}" placeholder="Tìm theo mã hoặc tên linh kiện...">
 		        </div>
-		    </div>
-		
-		    <div class="toolbar-actions">
-		        <button id="add-btn" type="button" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm mới</button>
-		    </div>
-		</div>
+            </form>
+            <button id="add-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Thêm mới</button>
+        </div>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Mã LK</th>
-                    <th>Tên linh kiện</th>
-                    <th>Đơn giá</th>
-                    <th>Số lượng tồn</th>
-                    <th>Nhà cung cấp</th>
-                    <th>Thiết bị tương thích</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody id="results-container" th:fragment="results-fragment">
-                <tr th:if="${linhKienList.isEmpty()}">
-                    <td colspan="7" style="text-align: center;">Không tìm thấy linh kiện nào.</td>
-                </tr>
-                <tr th:each="lk : ${linhKienList}">
-                    <td th:text="${lk.maLinhKien}"></td>
-                    <td th:text="${lk.tenLinhKien}"></td>
-                    <td th:text="${#numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
-                    <td th:text="${lk.soLuongTon}"></td>
-                    <td th:text="${lk.nhaCungCap}"></td>
-                    <td th:text="${lk.loaiThietBiTuongThich?.tenLoaiTB}"></td>
-                    <td class="action-buttons">
-                        <a href="#" class="edit-btn"
-                           th:data-id="${lk.maLinhKien}"
-                           th:data-ten="${lk.tenLinhKien}"
-                           th:data-gia="${lk.donGia}"
-                           th:data-soluong="${lk.soLuongTon}"
-                           th:data-ncc="${lk.nhaCungCap}"
-                           th:data-mota="${lk.moTa}"
-                           th:data-loaitb="${lk.loaiThietBiTuongThich?.maLoaiTB}">
-                           <i class="fas fa-edit"></i> Sửa
-                        </a>
-                        <form th:action="@{/manager/parts/delete/{id}(id=${lk.maLinhKien})}" method="get" style="display: inline;">
-						    <button type="submit" class="btn-delete" onclick="return confirm('Bạn có chắc chắn muốn xóa linh kiện này?');">
-						        <i class="fas fa-trash"></i> Xóa
-						    </button>
-						</form>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div id="results-container" th:fragment="results-fragment">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Mã LK</th>
+                        <th>Tên linh kiện</th>
+                        <th>Đơn giá</th>
+                        <th>Tồn kho</th>
+                        <th>Thiết bị tương thích</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${linhKienPage.empty}">
+                        <td colspan="6" style="text-align: center; padding: 40px 0;">Không tìm thấy linh kiện nào.</td>
+                    </tr>
+                    <tr th:each="lk : ${linhKienPage.content}">
+                        <td><strong th:text="${lk.maLinhKien}"></strong></td>
+                        <td th:text="${lk.tenLinhKien}"></td>
+                        <td th:text="${#numbers.formatDecimal(lk.donGia, 0, 'COMMA', 0, 'POINT')} + ' VNĐ'"></td>
+                        <td>
+                             <span class="badge" 
+                                  th:classappend="${lk.soLuongTon > 20} ? 'badge-success' : (${lk.soLuongTon > 0} ? 'badge-warning' : 'badge-danger')"
+                                  th:text="${lk.soLuongTon}">
+                            </span>
+                        </td>
+                        <td th:text="${lk.loaiThietBiTuongThich?.tenLoaiTB} ?: 'Mọi thiết bị'"></td>
+                        <td class="action-buttons">
+                            <a href="#" class="edit-btn"
+                               th:data-id="${lk.maLinhKien}"
+                               th:data-ten="${lk.tenLinhKien}"
+                               th:data-gia="${lk.donGia}"
+                               th:data-soluong="${lk.soLuongTon}"
+                               th:data-ncc="${lk.nhaCungCap}"
+                               th:data-mota="${lk.moTa}"
+                               th:data-loaitb="${lk.loaiThietBiTuongThich?.maLoaiTB}">
+                               <i class="fas fa-edit"></i> Sửa
+                            </a>
+                            <form th:action="@{/manager/parts/delete/{id}(id=${lk.maLinhKien})}" method="get" style="display: inline;">
+                                <button type="submit" class="btn-delete" onclick="return confirm('Bạn có chắc chắn muốn xóa linh kiện này?');" title="Xóa linh kiện">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div th:if="${linhKienPage.totalPages > 1}" class="pagination">
+                <a th:href="@{/manager/parts(keyword=${keyword}, page=0)}" th:classappend="${linhKienPage.first} ? 'disabled' : ''">« Đầu</a>
+                <a th:href="@{/manager/parts(keyword=${keyword}, page=${linhKienPage.number - 1})}" th:classappend="${linhKienPage.first} ? 'disabled' : ''">‹ Trước</a>
+                <th:block th:each="i : ${#numbers.sequence(0, linhKienPage.totalPages - 1)}">
+                    <a th:if="${i >= linhKienPage.number - 2 and i <= linhKienPage.number + 2}"
+                       th:href="@{/manager/parts(keyword=${keyword}, page=${i})}"
+                       th:classappend="${i == linhKienPage.number} ? 'active' : ''"
+                       th:text="${i + 1}"></a>
+                </th:block>
+                <a th:href="@{/manager/parts(keyword=${keyword}, page=${linhKienPage.number + 1})}" th:classappend="${linhKienPage.last} ? 'disabled' : ''">Sau ›</a>
+                <a th:href="@{/manager/parts(keyword=${keyword}, page=${linhKienPage.totalPages - 1})}" th:classappend="${linhKienPage.last} ? 'disabled' : ''">Cuối »</a>
+            </div>
+        </div>
     </div>
 
     <div id="part-modal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <h2 id="modal-title">Thêm Linh kiện mới</h2>
+            <h2 id="modal-title" style="margin-bottom: 25px;">Thêm Linh kiện mới</h2>
             <form id="part-form" th:action="@{/manager/parts/save}" th:object="${linhKien}" method="post">
                 <input type="hidden" id="maLinhKien" th:field="*{maLinhKien}" />
                 
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label for="tenLinhKien">Tên Linh kiện:</label>
                     <input type="text" id="tenLinhKien" th:field="*{tenLinhKien}" required />
                 </div>
-                <div class="form-group">
-                    <label for="donGia">Đơn giá (VNĐ):</label>
-                    <input type="number" id="donGia" th:field="*{donGia}" required min="0"/>
-                </div>
-                <div class="form-group">
-                    <label for="soLuongTon">Số lượng tồn:</label>
-                    <input type="number" id="soLuongTon" th:field="*{soLuongTon}" required min="0"/>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="donGia">Đơn giá (VNĐ):</label>
+                        <input type="number" id="donGia" th:field="*{donGia}" required min="0"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="soLuongTon">Số lượng tồn:</label>
+                        <input type="number" id="soLuongTon" th:field="*{soLuongTon}" required min="0"/>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="nhaCungCap">Nhà cung cấp:</label>
@@ -110,102 +138,95 @@
                 <div class="form-group">
                     <label for="loaiThietBiTuongThich">Loại thiết bị tương thích:</label>
                     <select id="loaiThietBiTuongThich" th:field="*{loaiThietBiTuongThich.maLoaiTB}">
-                        <option value="">-- Chọn loại thiết bị --</option>
+                        <option value="">-- Mọi loại thiết bị --</option>
                         <option th:each="loaiTB : ${loaiThietBiList}"
                                 th:value="${loaiTB.maLoaiTB}"
                                 th:text="${loaiTB.tenLoaiTB}"></option>
                     </select>
                 </div>
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label for="moTa">Mô tả:</label>
                     <textarea id="moTa" th:field="*{moTa}" rows="3"></textarea>
                 </div>
-                <button type="submit" class="btn-primary">Lưu lại</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu lại</button>
             </form>
         </div>
     </div>
 
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-        
-        const modal = document.getElementById('part-modal');
-        const addBtn = document.getElementById('add-btn');
-        const closeBtn = document.querySelector('.close-btn');
-        const editBtns = document.querySelectorAll('.edit-btn');
-        const form = document.getElementById('part-form');
-        const modalTitle = document.getElementById('modal-title');
-        
-        function openModal() { modal.style.display = 'block'; }
-        function closeModal() { modal.style.display = 'none'; }
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('part-modal');
+            const addBtn = document.getElementById('add-btn');
+            const closeBtn = document.querySelector('.close-btn');
+            const mainContent = document.querySelector('.main-content');
+            const form = document.getElementById('part-form');
+            const modalTitle = document.getElementById('modal-title');
+            
+            function openModal() { modal.style.display = 'block'; }
+            function closeModal() { modal.style.display = 'none'; }
 
-        addBtn.onclick = function() {
-            form.reset();
-            document.getElementById('maLinhKien').value = '';
-            modalTitle.innerText = 'Thêm Linh kiện mới';
-            openModal();
-        }
-
-        editBtns.forEach(btn => {
-            btn.onclick = function(e) {
-                e.preventDefault();
+            addBtn.onclick = function() {
                 form.reset();
-                modalTitle.innerText = 'Chỉnh sửa Linh kiện';
-                document.getElementById('maLinhKien').value = this.dataset.id;
-                document.getElementById('tenLinhKien').value = this.dataset.ten;
-                document.getElementById('donGia').value = this.dataset.gia;
-                document.getElementById('soLuongTon').value = this.dataset.soluong;
-                document.getElementById('nhaCungCap').value = this.dataset.ncc;
-                document.getElementById('moTa').value = this.dataset.mota;
-                document.getElementById('loaiThietBiTuongThich').value = this.dataset.loaitb;
+                document.getElementById('maLinhKien').value = '';
+                modalTitle.innerText = 'Thêm Linh kiện mới';
                 openModal();
             }
-        });
+            
+            mainContent.addEventListener('click', function(e) {
+                // Xử lý nút Sửa
+                const editBtn = e.target.closest('.edit-btn');
+                if (editBtn) {
+                    e.preventDefault();
+                    form.reset();
+                    modalTitle.innerText = 'Chỉnh sửa Linh kiện';
+                    document.getElementById('maLinhKien').value = editBtn.dataset.id;
+                    document.getElementById('tenLinhKien').value = editBtn.dataset.ten;
+                    document.getElementById('donGia').value = editBtn.dataset.gia;
+                    document.getElementById('soLuongTon').value = editBtn.dataset.soluong;
+                    document.getElementById('nhaCungCap').value = editBtn.dataset.ncc;
+                    document.getElementById('moTa').value = editBtn.dataset.mota;
+                    document.getElementById('loaiThietBiTuongThich').value = editBtn.dataset.loaitb;
+                    openModal();
+                }
 
-        closeBtn.onclick = closeModal;
-        window.onclick = function(event) { if (event.target == modal) closeModal(); }
-        
-        const errorMessage = /*[[${errorMessage}]]*/ null;
-        const hasErrorOnEdit = /*[[${errorMessage != null && linhKien != null && linhKien.maLinhKien != null}]]*/ false;
+                // Xử lý nút phân trang
+                if (e.target.matches('.pagination a') && !e.target.classList.contains('disabled')) {
+                    e.preventDefault();
+                    const url = new URL(e.target.href);
+                    const page = url.searchParams.get('page');
+                    loadResults(page);
+                }
+            });
 
-        if (hasErrorOnEdit) {
-            modalTitle.innerText = 'Chỉnh sửa Linh kiện';
-            openModal();
-        } else if (errorMessage) {
-            modalTitle.innerText = 'Thêm Linh kiện mới';
-            openModal();
-        }
-        
-        document.addEventListener('DOMContentLoaded', function () {
+            closeBtn.onclick = closeModal;
+            window.onclick = function(event) { if (event.target == modal) closeModal(); }
+            
+            // Xử lý tìm kiếm AJAX
             const searchInput = document.querySelector('input[name="keyword"]');
-            const resultsContainer = document.getElementById('results-container');
             let debounceTimer;
+
+            function loadResults(page = 0) {
+                const keyword = searchInput.value;
+                const url = `/manager/parts?keyword=${encodeURIComponent(keyword)}&page=${page}`;
+
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(response => response.text())
+                .then(html => {
+                    const resultsContainer = document.getElementById('results-container');
+                    if(resultsContainer) resultsContainer.innerHTML = html;
+                })
+                .catch(error => console.error('Lỗi khi tìm kiếm:', error));
+            }
 
             searchInput.addEventListener('input', function () {
                 clearTimeout(debounceTimer);
-                const keyword = this.value;
-                debounceTimer = setTimeout(() => {
-                    const searchUrl = `/manager/parts?keyword=${encodeURIComponent(keyword)}`;
-
-                    fetch(searchUrl, {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        resultsContainer.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('Lỗi khi tìm kiếm:', error);
-                        resultsContainer.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Có lỗi xảy ra khi tải kết quả.</td></tr>';
-                    });
-                }, 350);
+                debounceTimer = setTimeout(() => loadResults(0), 350);
             });
             
-            document.querySelector('.search-bar').addEventListener('submit', function (event) {
+            document.getElementById('search-form').addEventListener('submit', function (event) {
                 event.preventDefault();
             });
         });
-
-        /*]]>*/
     </script>
 </body>
 </html>

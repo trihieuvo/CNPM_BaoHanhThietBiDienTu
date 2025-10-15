@@ -5,12 +5,14 @@ import com.baohanh.trungtambaohanh.dto.DashboardStatsDto;
 import com.baohanh.trungtambaohanh.dto.LinhKienDetailDto;
 import com.baohanh.trungtambaohanh.dto.NhanVienDto;
 import com.baohanh.trungtambaohanh.dto.PhieuSuaChuaDetailDto;
-import com.baohanh.trungtambaohanh.dto.TicketStatsDto; 
+import com.baohanh.trungtambaohanh.dto.TicketStatsDto;
+import com.baohanh.trungtambaohanh.entity.KhieuNai;
 import com.baohanh.trungtambaohanh.entity.LinhKien;
 import com.baohanh.trungtambaohanh.entity.LoaiThietBi;
 import com.baohanh.trungtambaohanh.entity.NhanVien;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua; 
 import com.baohanh.trungtambaohanh.entity.TaiKhoan;
+import com.baohanh.trungtambaohanh.repository.KhieuNaiRepository;
 import com.baohanh.trungtambaohanh.repository.LinhKienRepository;
 import com.baohanh.trungtambaohanh.repository.LoaiThietBiRepository;
 import com.baohanh.trungtambaohanh.repository.NhanVienRepository;
@@ -23,6 +25,9 @@ import com.baohanh.trungtambaohanh.service.ExcelExportService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -73,6 +78,7 @@ public class ManagerController {
     private final BaoCaoService baoCaoService;
     private final ExcelExportService excelExportService;
     private final PasswordEncoder passwordEncoder;
+    private final KhieuNaiRepository khieuNaiRepository;
     
     @Autowired
     public ManagerController(DashboardService dashboardService,
@@ -85,7 +91,8 @@ public class ManagerController {
                              TaiKhoanService taiKhoanService,
                              BaoCaoService baoCaoService,
                              ExcelExportService excelExportService,
-                             PasswordEncoder passwordEncoder) {
+                             PasswordEncoder passwordEncoder,
+                             KhieuNaiRepository khieuNaiRepository) {
         this.dashboardService = dashboardService;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.linhKienRepository = linhKienRepository;
@@ -97,6 +104,7 @@ public class ManagerController {
         this.baoCaoService = baoCaoService;
         this.excelExportService = excelExportService;
         this.passwordEncoder = passwordEncoder;
+        this.khieuNaiRepository = khieuNaiRepository;
     }
     
     
@@ -176,25 +184,29 @@ public class ManagerController {
     @GetMapping("/tickets")
     public String showTicketsPage(@RequestParam(value = "keyword", required = false) String keyword,
                                   @RequestParam(value = "status", required = false) String status,
-                                  Model model, HttpServletRequest request) { // Thêm HttpServletRequest
-        List<PhieuSuaChua> filteredTickets = phieuSuaChuaRepository.searchAndFilter(keyword, status);
+                                  @RequestParam(name = "page", defaultValue = "0") int page, // Thêm page
+                                  @RequestParam(name = "size", defaultValue = "10") int size, // Thêm size
+                                  Model model, HttpServletRequest request) {
 
+        PageRequest pageable = PageRequest.of(page, size); // Tạo Pageable
+        Page<PhieuSuaChua> phieuSuaChuaPage = phieuSuaChuaRepository.searchAndFilter(keyword, status, pageable); // Gọi phương thức mới
+
+        // Phần tính toán các chỉ số thống kê giữ nguyên
         long moiTiepNhan = phieuSuaChuaRepository.countByTrangThai("Mới tiếp nhận");
         long dangSuaChua = phieuSuaChuaRepository.countByTrangThai("Đang sửa chữa");
         long choLinhKien = phieuSuaChuaRepository.countByTrangThai("Chờ linh kiện");
         long daHoanThanh = phieuSuaChuaRepository.countByTrangThai("Đã sửa xong") + phieuSuaChuaRepository.countByTrangThai("Đã trả khách");
-        long treHen = 0;
+        long treHen = 0; // Logic sẽ được phát triển sau
         TicketStatsDto ticketStats = new TicketStatsDto(moiTiepNhan, dangSuaChua, choLinhKien, daHoanThanh, treHen);
 
-        model.addAttribute("phieuSuaChuaList", filteredTickets);
+        model.addAttribute("phieuSuaChuaPage", phieuSuaChuaPage); // THAY ĐỔI: Đưa Page object vào model
         model.addAttribute("ticketStats", ticketStats);
         model.addAttribute("keyword", keyword);
         model.addAttribute("currentStatus", status);
 
-        // KIỂM TRA AJAX REQUEST
         String requestedWithHeader = request.getHeader("X-Requested-With");
         if ("XMLHttpRequest".equals(requestedWithHeader)) {
-            return "manager/tickets :: results-fragment"; // Trả về fragment
+            return "manager/tickets :: results-fragment"; 
         }
 
         return "manager/tickets"; 
@@ -203,15 +215,17 @@ public class ManagerController {
 
 
     @GetMapping("/parts")
-    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword, Model model, HttpServletRequest request) { // Thêm HttpServletRequest
-        List<LinhKien> linhKienList;
-        if (keyword != null && !keyword.isEmpty()) {
-            linhKienList = linhKienRepository.searchByKeyword(keyword);
-        } else {
-            linhKienList = linhKienRepository.findAll();
-        }
+    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword,
+                                @RequestParam(name = "page", defaultValue = "0") int page,
+                                @RequestParam(name = "size", defaultValue = "8") int size,
+                                Model model, HttpServletRequest request) {
+
+    	PageRequest pageable = PageRequest.of(page, size, Sort.by("maLinhKien").descending()); 
         
-        model.addAttribute("linhKienList", linhKienList);
+        // Luôn gọi phương thức có phân trang
+        Page<LinhKien> linhKienPage = linhKienRepository.searchByKeyword(keyword, pageable);
+        
+        model.addAttribute("linhKienPage", linhKienPage); // Đổi tên attribute thành "linhKienPage"
         model.addAttribute("keyword", keyword);
         
         if (!model.containsAttribute("linhKien")) {
@@ -219,14 +233,15 @@ public class ManagerController {
         }
         model.addAttribute("loaiThietBiList", loaiThietBiRepository.findAll());
 
-        // KIỂM TRA AJAX REQUEST
+        // Kiểm tra AJAX request để trả về fragment
         String requestedWithHeader = request.getHeader("X-Requested-With");
         if ("XMLHttpRequest".equals(requestedWithHeader)) {
-            return "manager/parts :: results-fragment"; // Trả về fragment
+            return "manager/parts :: results-fragment"; 
         }
         
         return "manager/parts";
     }
+
     
     @PostMapping("/parts/save")
     public String savePart(@ModelAttribute("linhKien") LinhKien linhKien, RedirectAttributes redirectAttributes) {
@@ -255,26 +270,30 @@ public class ManagerController {
     
     
     @GetMapping("/employees")
-	public String showEmployeesPage(@RequestParam(value = "keyword", required = false) String keyword,
-			@RequestParam(value = "vaiTroId", required = false) Integer vaiTroId, Model model, HttpServletRequest request) { // Thêm HttpServletRequest
-		List<NhanVien> nhanVienList = nhanVienRepository.searchAndFilter(keyword, vaiTroId);
+    public String showEmployeesPage(@RequestParam(value = "keyword", required = false) String keyword,
+                                    @RequestParam(value = "vaiTroId", required = false) Integer vaiTroId,
+                                    @RequestParam(name = "page", defaultValue = "0") int page, // Thêm tham số page
+                                    @RequestParam(name = "size", defaultValue = "8") int size,   // Thêm tham số size
+                                    Model model, HttpServletRequest request) {
 
-		model.addAttribute("nhanVienList", nhanVienList);
-		model.addAttribute("vaiTroList", vaiTroRepository.findAll());
-		model.addAttribute("keyword", keyword);
-		model.addAttribute("currentVaiTroId", vaiTroId);
+        PageRequest pageable = PageRequest.of(page, size); // Tạo đối tượng Pageable
+        Page<NhanVien> nhanVienPage = nhanVienRepository.searchAndFilter(keyword, vaiTroId, pageable); // Gọi phương thức mới
 
-		if (!model.containsAttribute("nhanVienDto")) {
-			model.addAttribute("nhanVienDto", new NhanVienDto());
-		}
+        model.addAttribute("nhanVienPage", nhanVienPage); // Đổi tên attribute thành "nhanVienPage"
+        model.addAttribute("vaiTroList", vaiTroRepository.findAll());
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("currentVaiTroId", vaiTroId);
 
-        // KIỂM TRA AJAX REQUEST
-        String requestedWithHeader = request.getHeader("X-Requested-With");
-        if ("XMLHttpRequest".equals(requestedWithHeader)) {
-            return "manager/employees :: results-fragment"; // Trả về fragment
+        if (!model.containsAttribute("nhanVienDto")) {
+            model.addAttribute("nhanVienDto", new NhanVienDto());
         }
 
-		return "manager/employees";
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/employees :: results-fragment";
+        }
+
+        return "manager/employees";
     }
     @PostMapping("/employees/save")
     public String saveEmployee(@ModelAttribute("nhanVienDto") NhanVienDto nhanVienDto,
@@ -515,5 +534,39 @@ public class ManagerController {
     @GetMapping("/settings")
     public String showSettingsPage() {
         return "manager/settings";
+    }
+    @GetMapping("/complaints")
+    public String showComplaintsPage(@RequestParam(name = "page", defaultValue = "0") int page,
+                                     @RequestParam(name = "size", defaultValue = "10") int size,
+                                     Model model) {
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("ngayGui").descending());
+        Page<KhieuNai> complaintPage = khieuNaiRepository.findAll(pageable);
+
+        model.addAttribute("complaintPage", complaintPage);
+
+        return "manager/complaints"; 
+    }
+    @PostMapping("/complaints/update-status")
+    public String updateComplaintStatus(@RequestParam("complaintId") Integer complaintId,
+                                        @RequestParam("status") String status,
+                                        Principal principal,
+                                        RedirectAttributes redirectAttributes) {
+
+        Optional<KhieuNai> complaintOpt = khieuNaiRepository.findById(complaintId);
+        Optional<NhanVien> managerOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+
+        if (complaintOpt.isPresent() && managerOpt.isPresent()) {
+            KhieuNai complaint = complaintOpt.get();
+            complaint.setTrangThai(status);
+            // Optional: Gán nhân viên xử lý cho khiếu nại
+            // complaint.setNhanVienXuLy(managerOpt.get()); 
+            khieuNaiRepository.save(complaint);
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật trạng thái khiếu nại #" + complaintId + " thành công!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy khiếu nại hoặc nhân viên.");
+        }
+
+        return "redirect:/manager/complaints";
     }
 }

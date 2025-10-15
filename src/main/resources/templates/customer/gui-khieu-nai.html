@@ -11,7 +11,7 @@
     <div th:replace="~{customer/fragments :: sidebar(activePage='khieu-nai', khachHang=${khachHang})}"></div>
 
     <div class="main-content">
-        <div class="card">
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
             <div class="header">
                 <div>
                     <h1>Gửi yêu cầu/khiếu nại</h1>
@@ -19,59 +19,66 @@
                 </div>
             </div>
 
+            <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
             <div class="info-box">
-                <h3>📢 Hướng dẫn</h3>
+                <h3><i class="fas fa-info-circle"></i> Hướng dẫn</h3>
                 <p>
-                    Vui lòng mô tả chi tiết yêu cầu hoặc vấn đề của bạn. 
+                    Vui lòng chọn phiếu sửa chữa liên quan và mô tả chi tiết vấn đề của bạn.
                     Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.
                 </p>
             </div>
 
             <form action="/customer/khieu-nai" method="post">
                 <div class="form-group">
+                    <label for="maPhieu">Về phiếu sửa chữa số: <span style="color: red;">*</span></label>
+                    <select id="maPhieu" name="maPhieu" required>
+                        <option value="">-- Vui lòng chọn phiếu sửa chữa liên quan --</option>
+                        <th:block th:if="${danhSachPhieu.isEmpty()}">
+                            <option value="" disabled>Bạn không có phiếu sửa chữa nào để khiếu nại.</option>
+                        </th:block>
+                        <option th:each="phieu : ${danhSachPhieu}"
+                                th:value="${phieu.maPhieu}"
+                                th:text="|#${phieu.maPhieu} - ${phieu.thietBi.model} (Ngày: ${#temporals.format(phieu.ngayTiepNhan, 'dd/MM/yyyy')})|">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label for="tieuDe">Tiêu đề: <span style="color: red;">*</span></label>
                     <input type="text" 
                            id="tieuDe" 
                            name="tieuDe" 
-                           placeholder="Nhập tiêu đề ngắn gọn"
+                           placeholder="Ví dụ: Thiết bị vẫn còn lỗi sau khi sửa, Chi phí không hợp lý,..."
                            maxlength="200"
-                           required
-                           autofocus>
+                           required>
                 </div>
 
                 <div class="form-group">
-                    <label for="noiDung">Nội dung: <span style="color: red;">*</span></label>
+                    <label for="noiDung">Nội dung chi tiết: <span style="color: red;">*</span></label>
                     <textarea id="noiDung" 
                               name="noiDung" 
                               rows="8"
-                              placeholder="Mô tả chi tiết vấn đề hoặc yêu cầu của bạn..."
+                              placeholder="Mô tả chi tiết vấn đề hoặc yêu cầu của bạn ở đây..."
                               required></textarea>
-                    <small>Vui lòng cung cấp càng nhiều thông tin càng tốt</small>
+                    <small>Vui lòng cung cấp càng nhiều thông tin càng tốt để chúng tôi hỗ trợ bạn nhanh hơn.</small>
                 </div>
 
                 <div class="suggestion-box">
-                    <strong>💡 Gợi ý:</strong>
+                    <strong><i class="fas fa-lightbulb"></i> Gợi ý:</strong>
                     <ul>
-                        <li>Nêu rõ mã phiếu sửa chữa (nếu có)</li>
-                        <li>Mô tả cụ thể vấn đề đang gặp phải</li>
-                        <li>Đề xuất giải pháp (nếu có)</li>
+                        <li>Mô tả cụ thể vấn đề đang gặp phải sau khi nhận lại thiết bị.</li>
+                        <li>Nêu rõ mong muốn của bạn (ví dụ: kiểm tra lại, giải thích chi phí...).</li>
+                        <li>Cung cấp thông tin liên hệ để chúng tôi phản hồi (nếu khác với thông tin tài khoản).</li>
                     </ul>
                 </div>
 
                 <div class="button-group">
-                    <button type="submit" class="btn">📤 Gửi khiếu nại</button>
+                    <button type="submit" class="btn"><i class="fas fa-paper-plane"></i> Gửi khiếu nại</button>
                     <a href="/customer/dashboard" class="btn btn-secondary">Hủy</a>
                 </div>
             </form>
-
-            <div class="contact-section">
-                <h3>📞 Thông tin liên hệ khác</h3>
-                <div class="contact-details">
-                    <p><strong>Hotline:</strong> 1900-xxxx (8:00 - 20:00 hàng ngày)</p>
-                    <p><strong>Email:</strong> support@baohanh.com</p>
-                    <p><strong>Địa chỉ:</strong> 123 Đường ABC, Quận XYZ, TP.HCM</p>
-                </div>
-            </div>
         </div>
     </div>
 </body>

@@ -14,6 +14,13 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; }
         .action-buttons a, .action-buttons .edit-btn { margin-right: 15px; color: #007bff; text-decoration: none; cursor: pointer; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        /* CSS cho Phân trang */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0; }
+        .pagination a, .pagination span { padding: 8px 16px; border: 1px solid #e2e8f0; text-decoration: none; color: #64748b; border-radius: 6px; transition: background-color 0.2s; }
+        .pagination a:hover { background-color: #f1f5f9; }
+        .pagination .active { background-color: #007bff; color: white; border-color: #007bff; font-weight: bold; }
+        .pagination .disabled { color: #cbd5e1; pointer-events: none; background-color: #f8fafc; }
     </style>
 </head>
 <body>
@@ -22,8 +29,8 @@
     <div class="main-content">
         <h1>Quản lý Nhân viên</h1>
         
-        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}" style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
-        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}" style="background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 6px; margin-bottom: 20px;"></div>
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
         <form th:action="@{/manager/employees}" method="get" class="toolbar">
 		    <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; flex-grow: 1;">
@@ -34,7 +41,7 @@
 		
 		        <div class="form-group" style="min-width: 200px; margin-bottom: 0;">
 		            <label for="role-select">Vai trò:</label>
-		            <select id="role-select" name="vaiTroId" onchange="this.form.submit()">
+		            <select id="role-select" name="vaiTroId">
 		                <option value="">(Tất cả vai trò)</option>
 		                <option th:each="vt : ${vaiTroList}"
 		                        th:value="${vt.maVaiTro}"
@@ -51,52 +58,69 @@
 		    <button type="submit" style="display: none;"></button>
 		</form>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Họ và tên</th>
-                    <th>Email</th>
-                    <th>Số điện thoại</th>
-                    <th>Vai Trò</th>
-                    <th>Trạng Thái</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody id="results-container" th:fragment="results-fragment">
-                 <tr th:if="${nhanVienList.isEmpty()}"><td colspan="7" style="text-align: center;">Không có.</td></tr>
-                 <tr th:each="nv : ${nhanVienList}">
-                    <td th:text="${nv.maNV}"></td>
-                    <td th:text="${nv.hoTen}"></td>
-                    <td th:text="${nv.email}"></td>
-                    <td th:text="${nv.soDienThoai}"></td>
-                    <td th:text="${nv.taiKhoan.vaiTro.tenVaiTro}"></td>
-                    <td>
-                        <span th:if="${nv.taiKhoan.isTrangThai()}" class="status status-active">Đang hoạt động</span>
-                        <span th:unless="${nv.taiKhoan.isTrangThai()}" class="status status-locked">Đã khoá</span>
-                    </td>
-                    <td class="action-buttons">
-                        <a class="edit-btn"
-                           th:data-id="${nv.maNV}"
-                           th:data-hoten="${nv.hoTen}"
-                           th:data-email="${nv.email}"
-                           th:data-sdt="${nv.soDienThoai}"
-                           th:data-tendangnhap="${nv.taiKhoan.tenDangNhap}"
-                           th:data-vaitro="${nv.taiKhoan.vaiTro.maVaiTro}"
-                           th:data-trangthai="${nv.taiKhoan.isTrangThai()}"><i class="fas fa-edit"></i></a>
-                        
-                        <form th:action="@{/manager/employees/toggle-status/{id}(id=${nv.maNV})}" method="get" style="display: inline;">
-						    <button th:if="${nv.taiKhoan.isTrangThai()}" type="submit" class="btn-delete" onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?');">
-						        <i class="fas fa-user-lock"></i>
-						    </button>
-						    <button th:unless="${nv.taiKhoan.isTrangThai()}" type="submit" class="btn-delete" style="color: var(--success-color);" onclick="return confirm('Bạn có chắc muốn mở khóa tài khoản này?');">
-						        <i class="fas fa-user-check"></i>
-						    </button>
-						</form>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+        <div id="results-container" th:fragment="results-fragment">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai Trò</th>
+                        <th>Trạng Thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                     <tr th:if="${nhanVienPage.empty}"><td colspan="7" style="text-align: center;">Không có nhân viên nào.</td></tr>
+                     <tr th:each="nv : ${nhanVienPage.content}">
+                        <td th:text="${nv.maNV}"></td>
+                        <td th:text="${nv.hoTen}"></td>
+                        <td th:text="${nv.email}"></td>
+                        <td th:text="${nv.soDienThoai}"></td>
+                        <td th:text="${nv.taiKhoan.vaiTro.tenVaiTro}"></td>
+                        <td>
+                            <span th:if="${nv.taiKhoan.isTrangThai()}" class="status status-active">Đang hoạt động</span>
+                            <span th:unless="${nv.taiKhoan.isTrangThai()}" class="status status-locked">Đã khoá</span>
+                        </td>
+                        <td class="action-buttons">
+                            <a class="edit-btn"
+                               th:data-id="${nv.maNV}"
+                               th:data-hoten="${nv.hoTen}"
+                               th:data-email="${nv.email}"
+                               th:data-sdt="${nv.soDienThoai}"
+                               th:data-tendangnhap="${nv.taiKhoan.tenDangNhap}"
+                               th:data-vaitro="${nv.taiKhoan.vaiTro.maVaiTro}"
+                               th:data-trangthai="${nv.taiKhoan.isTrangThai()}"><i class="fas fa-edit"></i> Sửa</a>
+                            
+                            <form th:action="@{/manager/employees/toggle-status/{id}(id=${nv.maNV})}" method="get" style="display: inline;">
+                                <button th:if="${nv.taiKhoan.isTrangThai()}" type="submit" class="btn-delete" style="color: #dc3545; background: none; border: none; cursor: pointer;" onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?');">
+                                    <i class="fas fa-user-lock"></i> Khóa
+                                </button>
+                                <button th:unless="${nv.taiKhoan.isTrangThai()}" type="submit" class="btn-delete" style="color: #28a745; background: none; border: none; cursor: pointer;" onclick="return confirm('Bạn có chắc muốn mở khóa tài khoản này?');">
+                                    <i class="fas fa-user-check"></i> Mở
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div th:if="${nhanVienPage.totalPages > 1}" class="pagination">
+                <a th:href="@{/manager/employees(keyword=${keyword}, vaiTroId=${currentVaiTroId}, page=0)}" th:classappend="${nhanVienPage.first} ? 'disabled' : ''">« Đầu</a>
+                <a th:href="@{/manager/employees(keyword=${keyword}, vaiTroId=${currentVaiTroId}, page=${nhanVienPage.number - 1})}" th:classappend="${nhanVienPage.first} ? 'disabled' : ''">‹ Trước</a>
+    
+                <th:block th:each="i : ${#numbers.sequence(0, nhanVienPage.totalPages - 1)}">
+                    <a th:if="${i >= nhanVienPage.number - 2 and i <= nhanVienPage.number + 2}"
+                       th:href="@{/manager/employees(keyword=${keyword}, vaiTroId=${currentVaiTroId}, page=${i})}"
+                       th:classappend="${i == nhanVienPage.number} ? 'active' : ''"
+                       th:text="${i + 1}"></a>
+                </th:block>
+    
+                <a th:href="@{/manager/employees(keyword=${keyword}, vaiTroId=${currentVaiTroId}, page=${nhanVienPage.number + 1})}" th:classappend="${nhanVienPage.last} ? 'disabled' : ''">Sau ›</a>
+                <a th:href="@{/manager/employees(keyword=${keyword}, vaiTroId=${currentVaiTroId}, page=${nhanVienPage.totalPages - 1})}" th:classappend="${nhanVienPage.last} ? 'disabled' : ''">Cuối »</a>
+            </div>
+        </div>
     </div>
 
     <div id="employee-modal" class="modal">
@@ -140,6 +164,7 @@
     
     <script th:inline="javascript">
     /*<![CDATA[*/
+        // ... (phần script xử lý modal giữ nguyên) ...
         const modal = document.getElementById('employee-modal');
         const addBtn = document.getElementById('add-btn');
         const closeBtn = document.querySelector('#employee-modal .close-btn');
@@ -160,18 +185,19 @@
             openModal();
         }
 
-        editBtns.forEach(btn => {
-            btn.onclick = function(e) {
+        document.body.addEventListener('click', function(e) {
+            if (e.target.closest('.edit-btn')) {
                 e.preventDefault();
+                let btn = e.target.closest('.edit-btn');
                 form.reset();
                 modalTitle.innerText = 'Chỉnh sửa Nhân viên';
-                document.getElementById('maNV').value = this.dataset.id;
-                document.getElementById('hoTen').value = this.dataset.hoten;
-                document.getElementById('email').value = this.dataset.email;
-                document.getElementById('soDienThoai').value = this.dataset.sdt;
-                document.getElementById('tenDangNhap').value = this.dataset.tendangnhap;
+                document.getElementById('maNV').value = btn.dataset.id;
+                document.getElementById('hoTen').value = btn.dataset.hoten;
+                document.getElementById('email').value = btn.dataset.email;
+                document.getElementById('soDienThoai').value = btn.dataset.sdt;
+                document.getElementById('tenDangNhap').value = btn.dataset.tendangnhap;
                 document.getElementById('tenDangNhap').readOnly = true;
-                document.getElementById('vaiTro').value = this.dataset.vaitro;
+                document.getElementById('vaiTro').value = btn.dataset.vaitro;
                 document.getElementById('matKhau').placeholder = 'Để trống nếu không đổi';
                 document.getElementById('matKhau').required = false;
                 openModal();
@@ -189,39 +215,48 @@
             if(isEdit) document.getElementById('tenDangNhap').readOnly = true;
         }
 
+        // SCRIPT XỬ LÝ AJAX VÀ PHÂN TRANG
         document.addEventListener('DOMContentLoaded', function () {
-            const searchInput = document.querySelector('input[name="keyword"]');
-            const roleSelect = document.querySelector('select[name="vaiTroId"]');
-            const resultsContainer = document.getElementById('results-container');
+            const searchInput = document.getElementById('employee-keyword');
+            const roleSelect = document.getElementById('role-select');
+            const mainContent = document.querySelector('.main-content');
             let debounceTimer;
 
-            function loadResults() {
+            function loadResults(page = 0) {
                 const keyword = searchInput.value;
                 const vaiTroId = roleSelect.value;
-                const url = `/manager/employees?keyword=${encodeURIComponent(keyword)}&vaiTroId=${encodeURIComponent(vaiTroId)}`;
+                const url = `/manager/employees?keyword=${encodeURIComponent(keyword)}&vaiTroId=${encodeURIComponent(vaiTroId)}&page=${page}`;
 
                 fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
                 .then(response => response.text())
                 .then(html => {
-                    resultsContainer.innerHTML = html;
+                    const resultsContainer = document.getElementById('results-container');
+                    if(resultsContainer) {
+                        resultsContainer.innerHTML = html;
+                    }
                 })
                 .catch(error => {
-                    console.error('Lỗi khi tìm kiếm:', error);
-                    resultsContainer.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Có lỗi xảy ra khi tải kết quả.</td></tr>';
+                    console.error('Lỗi khi tải dữ liệu:', error);
                 });
             }
 
             searchInput.addEventListener('input', function() {
                 clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(loadResults, 350);
+                debounceTimer = setTimeout(() => loadResults(0), 350);
             });
+            
+            roleSelect.addEventListener('change', () => loadResults(0));
 
-            roleSelect.addEventListener('change', loadResults);
-
-            document.querySelector('.toolbar').addEventListener('submit', function(e) {
-                e.preventDefault();
+            // Sử dụng event delegation cho các nút phân trang
+            mainContent.addEventListener('click', function(e) {
+                if (e.target.matches('.pagination a') && !e.target.classList.contains('disabled')) {
+                    e.preventDefault();
+                    const url = new URL(e.target.href);
+                    const page = url.searchParams.get('page');
+                    loadResults(page);
+                }
             });
         });
     /*]]>*/
