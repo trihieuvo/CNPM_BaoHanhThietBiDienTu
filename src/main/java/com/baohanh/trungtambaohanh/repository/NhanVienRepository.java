@@ -21,4 +21,8 @@ public interface NhanVienRepository extends JpaRepository<NhanVien, Integer> {
             "LOWER(nv.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:vaiTroId IS NULL OR nv.taiKhoan.vaiTro.maVaiTro = :vaiTroId)")
      List<NhanVien> searchAndFilter(@Param("keyword") String keyword, @Param("vaiTroId") Integer vaiTroId);
+    
+    
+    @Query("SELECT nv FROM NhanVien nv WHERE nv.taiKhoan.vaiTro.tenVaiTro = 'Kỹ thuật viên'")
+    List<NhanVien> findAllTechnicians();
 }

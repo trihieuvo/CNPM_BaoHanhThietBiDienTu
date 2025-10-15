@@ -4,11 +4,11 @@ import com.baohanh.trungtambaohanh.dto.DashboardStatsDto;
 import com.baohanh.trungtambaohanh.dto.LinhKienDetailDto;
 import com.baohanh.trungtambaohanh.dto.NhanVienDto;
 import com.baohanh.trungtambaohanh.dto.PhieuSuaChuaDetailDto;
-import com.baohanh.trungtambaohanh.dto.TicketStatsDto; // IMPORT DTO MỚI
+import com.baohanh.trungtambaohanh.dto.TicketStatsDto; 
 import com.baohanh.trungtambaohanh.entity.LinhKien;
 import com.baohanh.trungtambaohanh.entity.LoaiThietBi;
 import com.baohanh.trungtambaohanh.entity.NhanVien;
-import com.baohanh.trungtambaohanh.entity.PhieuSuaChua; // IMPORT PHIEUSUACHUA
+import com.baohanh.trungtambaohanh.entity.PhieuSuaChua; 
 import com.baohanh.trungtambaohanh.entity.TaiKhoan;
 import com.baohanh.trungtambaohanh.repository.LinhKienRepository;
 import com.baohanh.trungtambaohanh.repository.LoaiThietBiRepository;
@@ -16,8 +16,10 @@ import com.baohanh.trungtambaohanh.repository.NhanVienRepository;
 import com.baohanh.trungtambaohanh.repository.PhieuSuaChuaRepository;
 import com.baohanh.trungtambaohanh.repository.TaiKhoanRepository;
 import com.baohanh.trungtambaohanh.repository.VaiTroRepository;
+import com.baohanh.trungtambaohanh.service.BaoCaoService;
 import com.baohanh.trungtambaohanh.service.DashboardService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +32,10 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +53,7 @@ public class ManagerController {
     private final VaiTroRepository vaiTroRepository;
     private final TaiKhoanRepository taiKhoanRepository;
     private final TaiKhoanService taiKhoanService;
+    private final BaoCaoService baoCaoService;
 
     @Autowired
     public ManagerController(DashboardService dashboardService,
@@ -57,7 +63,8 @@ public class ManagerController {
                              NhanVienRepository nhanVienRepository,
                              VaiTroRepository vaiTroRepository, 
                              TaiKhoanRepository taiKhoanRepository, 
-                             TaiKhoanService taiKhoanService) {
+                             TaiKhoanService taiKhoanService,
+                             BaoCaoService baoCaoService) {
         this.dashboardService = dashboardService;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.linhKienRepository = linhKienRepository;
@@ -66,6 +73,7 @@ public class ManagerController {
         this.vaiTroRepository = vaiTroRepository; 
         this.taiKhoanRepository = taiKhoanRepository; 
         this.taiKhoanService = taiKhoanService; 
+        this.baoCaoService = baoCaoService;
     }
     
     
@@ -306,5 +314,39 @@ public class ManagerController {
         }
         
         return ResponseEntity.notFound().build();
+    }
+    
+    @GetMapping("/revenue-report")
+    public String showRevenueReportPage(
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(value = "ktvId", required = false) Integer ktvId,
+            Model model
+            ) {
+
+        // Mặc định là tháng này nếu không có ngày nào được chọn
+        if (startDate == null) startDate = LocalDate.now().withDayOfMonth(1);
+        if (endDate == null) endDate = LocalDate.now();
+
+        // Chuyển đổi sang OffsetDateTime để truy vấn
+        OffsetDateTime startDateTime = startDate.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDateTime = endDate.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+        // Lấy dữ liệu từ service
+        List<PhieuSuaChua> phieuList = baoCaoService.getPhieuSuaChuaHoanThanh(startDateTime, endDateTime, ktvId);
+      
+        
+        // Đưa dữ liệu vào model
+        model.addAttribute("kpis", baoCaoService.tinhToanKpis(phieuList, startDateTime, endDateTime));
+        model.addAttribute("revenueByDayChart", baoCaoService.getDoanhThuTheoNgayChart(startDateTime, endDateTime, ktvId));
+        model.addAttribute("revenueByDeviceTypeChart", baoCaoService.getDoanhThuTheoLoaiThietBiChart(startDateTime, endDateTime, ktvId));
+        model.addAttribute("detailedTickets", phieuList);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("technicians", nhanVienRepository.findAllTechnicians()); 
+        model.addAttribute("currentKtvId", ktvId); // Giữ lại giá trị đã lọc
+
+
+        return "manager/revenue-report";
     }
 }
