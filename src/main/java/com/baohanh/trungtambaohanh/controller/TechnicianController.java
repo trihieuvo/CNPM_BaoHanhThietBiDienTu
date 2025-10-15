@@ -68,13 +68,12 @@ public class TechnicianController {
 			model.addAttribute("congViecPage", congViecPage);
 			model.addAttribute("keyword", keyword);
 
-			// Kiểm tra xem đây có phải là yêu cầu AJAX không
 			String requestedWithHeader = request.getHeader("X-Requested-With");
 			if ("XMLHttpRequest".equals(requestedWithHeader)) {
-				return "technician/dashboard :: results-fragment"; // Nếu là AJAX, chỉ trả về fragment
+				return "technician/dashboard :: results-fragment";
 			}
 		}
-		return "technician/dashboard"; // Nếu là tải trang bình thường, trả về toàn bộ trang
+		return "technician/dashboard";
 	}
 
 
@@ -83,14 +82,8 @@ public class TechnicianController {
 		Optional<PhieuSuaChua> phieuSuaChuaOpt = phieuSuaChuaRepository.findById(id);
 		if (phieuSuaChuaOpt.isPresent()) {
 			PhieuSuaChua phieu = phieuSuaChuaOpt.get();
-
-			// Lấy danh sách chi tiết linh kiện đã sử dụng
 			List<ChiTietSuaChua> chiTietList = chiTietSuaChuaRepository.findByPhieuSuaChua_MaPhieu(id);
-
-			// Lấy tất cả linh kiện để thêm mới
 			List<LinhKien> allLinhKien = linhKienRepository.findAll();
-
-			// KIỂM TRA PHIẾU ĐÃ HOÀN THÀNH CHƯA
 			String trangThai = phieu.getTrangThai();
 			List<String> trangThaiHoanThanh = Arrays.asList("Đã sửa xong", "Hoàn thành", "Đã trả khách");
 			boolean isCompleted = trangThaiHoanThanh.contains(trangThai);
@@ -98,7 +91,7 @@ public class TechnicianController {
 			model.addAttribute("phieu", phieu);
 			model.addAttribute("chiTietList", chiTietList);
 			model.addAttribute("allLinhKien", allLinhKien);
-			model.addAttribute("isCompleted", isCompleted); // Gửi biến này sang view
+			model.addAttribute("isCompleted", isCompleted);
 
 			return "technician/cap-nhat-cong-viec";
 		}
@@ -113,7 +106,6 @@ public class TechnicianController {
 			Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
 
 			if (phieuOpt.isPresent() && technicianOpt.isPresent()) {
-				// Đảm bảo kỹ thuật viên chỉ có thể xóa phiếu của chính mình
 				if (phieuOpt.get().getKyThuatVien().getMaNV().equals(technicianOpt.get().getMaNV())) {
 					phieuSuaChuaRepository.deleteById(id);
 					redirectAttributes.addFlashAttribute("successMessage",
@@ -139,10 +131,7 @@ public class TechnicianController {
 			PhieuSuaChua phieu = phieuSuaChuaOpt.get();
 			phieu.setTrangThai(trangThai);
 			phieu.setGhiChuKyThuat(ghiChuKyThuat);
-
-			// Tính lại tổng chi phí
 			phieu.tinhTongChiPhi();
-
 			phieuSuaChuaRepository.save(phieu);
 			redirectAttributes.addFlashAttribute("successMessage", "Cập nhật thành công!");
 		}
@@ -151,118 +140,94 @@ public class TechnicianController {
 
 	@PostMapping("/cong-viec/{maPhieu}/them-linh-kien")
 	@Transactional
-	@ResponseBody // Annotation quan trọng để trả về JSON
+	@ResponseBody
 	public ResponseEntity<Map<String, Object>> themLinhKien(@PathVariable("maPhieu") Integer maPhieu,
 			@RequestParam("maLinhKien") Integer maLinhKien, @RequestParam("soLuong") Integer soLuong) {
 		Map<String, Object> response = new HashMap<>();
 		try {
-			Optional<PhieuSuaChua> phieuOpt = phieuSuaChuaRepository.findById(maPhieu);
-			Optional<LinhKien> linhKienOpt = linhKienRepository.findById(maLinhKien);
+			PhieuSuaChua phieu = phieuSuaChuaRepository.findById(maPhieu)
+					.orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa."));
+			LinhKien linhKien = linhKienRepository.findById(maLinhKien)
+					.orElseThrow(() -> new RuntimeException("Không tìm thấy linh kiện."));
 
-			if (phieuOpt.isPresent() && linhKienOpt.isPresent()) {
-				PhieuSuaChua phieu = phieuOpt.get();
-				LinhKien linhKien = linhKienOpt.get();
+			if (linhKien.getSoLuongTon() < soLuong) {
+				response.put("status", "error");
+				response.put("message", "Không đủ linh kiện trong kho! Tồn kho: " + linhKien.getSoLuongTon());
+				return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+			}
 
-				if (linhKien.getSoLuongTon() < soLuong) {
-					response.put("status", "error");
-					response.put("message", "Không đủ linh kiện trong kho! Tồn kho: " + linhKien.getSoLuongTon());
-					return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-				}
+			Optional<ChiTietSuaChua> existingChiTietOpt = chiTietSuaChuaRepository
+					.findByPhieuSuaChua_MaPhieuAndLinhKien_MaLinhKien(maPhieu, maLinhKien);
 
-				ChiTietSuaChua chiTiet = new ChiTietSuaChua();
+			ChiTietSuaChua chiTiet;
+			if (existingChiTietOpt.isPresent()) {
+				chiTiet = existingChiTietOpt.get();
+				chiTiet.setSoLuong(chiTiet.getSoLuong() + soLuong);
+			} else {
+				chiTiet = new ChiTietSuaChua();
 				chiTiet.setPhieuSuaChua(phieu);
 				chiTiet.setLinhKien(linhKien);
 				chiTiet.setSoLuong(soLuong);
 				chiTiet.setDonGia(linhKien.getDonGia());
-				chiTiet.calculateThanhTien(); // Tính thành tiền
-
-				// Lưu chi tiết trước để lấy ID
-				ChiTietSuaChua savedChiTiet = chiTietSuaChuaRepository.save(chiTiet);
-
-				// Cập nhật tồn kho
-				linhKien.setSoLuongTon(linhKien.getSoLuongTon() - soLuong);
-				linhKienRepository.save(linhKien);
-
-				// Tính lại tổng chi phí và lưu phiếu
-				phieu.tinhTongChiPhi();
-				phieuSuaChuaRepository.save(phieu);
-
-				// Chuẩn bị dữ liệu trả về
-				response.put("status", "success");
-				response.put("message", "Đã thêm linh kiện thành công!");
-				response.put("chiTiet",
-						Map.of("maChiTiet", savedChiTiet.getMaChiTiet(), "tenLinhKien", linhKien.getTenLinhKien(),
-								"soLuong", soLuong, "donGia", linhKien.getDonGia(), "thanhTien",
-								savedChiTiet.getThanhTien()));
-				response.put("tongChiPhi", phieu.getTongChiPhi());
-
-				return new ResponseEntity<>(response, HttpStatus.OK);
 			}
+			
+			chiTiet.calculateThanhTien();
+			chiTietSuaChuaRepository.save(chiTiet);
+
+			linhKien.setSoLuongTon(linhKien.getSoLuongTon() - soLuong);
+			linhKienRepository.save(linhKien);
+
+			entityManager.flush();
+			entityManager.refresh(phieu);
+
+			phieu.tinhTongChiPhi();
+			phieuSuaChuaRepository.save(phieu);
+
+			response.put("status", "success");
+			response.put("message", "Đã cập nhật chi phí thành công!");
+			return new ResponseEntity<>(response, HttpStatus.OK);
+
 		} catch (Exception e) {
 			response.put("status", "error");
-			response.put("message", "Lỗi khi thêm linh kiện: " + e.getMessage());
+			response.put("message", "Lỗi khi cập nhật chi phí: " + e.getMessage());
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		response.put("status", "error");
-		response.put("message", "Không tìm thấy phiếu hoặc linh kiện.");
-		return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
 	}
 
-	// Xóa linh kiện khỏi phiếu sửa chữa - FIXED PROPERLY
 	@PostMapping("/cong-viec/{maPhieu}/xoa-linh-kien/{maChiTiet}")
 	@Transactional
-	public String xoaLinhKien(@PathVariable("maPhieu") Integer maPhieu, @PathVariable("maChiTiet") Integer maChiTiet,
-			RedirectAttributes redirectAttributes) {
+	public String xoaLinhKien(@PathVariable("maPhieu") Integer maPhieu,
+							  @PathVariable("maChiTiet") Integer maChiTiet,
+							  RedirectAttributes redirectAttributes) {
 		try {
-			// Load phiếu sửa chữa
-			Optional<PhieuSuaChua> phieuOpt = phieuSuaChuaRepository.findById(maPhieu);
+			ChiTietSuaChua chiTiet = chiTietSuaChuaRepository.findById(maChiTiet)
+					.orElseThrow(() -> new RuntimeException("Không tìm thấy chi tiết cần xóa!"));
+			
+			LinhKien linhKien = chiTiet.getLinhKien();
+			linhKien.setSoLuongTon(linhKien.getSoLuongTon() + 1);
+			linhKienRepository.save(linhKien);
 
-			if (phieuOpt.isPresent()) {
-				PhieuSuaChua phieu = phieuOpt.get();
-
-				// Tìm chi tiết cần xóa trong collection
-				ChiTietSuaChua chiTietCanXoa = null;
-				for (ChiTietSuaChua ct : phieu.getChiTietSuaChuaList()) {
-					if (ct.getMaChiTiet().equals(maChiTiet)) {
-						chiTietCanXoa = ct;
-						break;
-					}
-				}
-
-				if (chiTietCanXoa != null) {
-					// Lưu thông tin để hoàn trả kho
-					Integer soLuongHoanTra = chiTietCanXoa.getSoLuong();
-					Integer maLinhKien = chiTietCanXoa.getLinhKien().getMaLinhKien();
-
-					// Xóa từ collection - orphanRemoval sẽ tự động xóa khỏi DB
-					phieu.getChiTietSuaChuaList().remove(chiTietCanXoa);
-					chiTietCanXoa.setPhieuSuaChua(null);
-
-					// Hoàn trả số lượng vào kho
-					Optional<LinhKien> linhKienOpt = linhKienRepository.findById(maLinhKien);
-					if (linhKienOpt.isPresent()) {
-						LinhKien linhKien = linhKienOpt.get();
-						linhKien.setSoLuongTon(linhKien.getSoLuongTon() + soLuongHoanTra);
-						linhKienRepository.save(linhKien);
-					}
-
-					// Tính lại tổng chi phí
-					phieu.tinhTongChiPhi();
-					phieuSuaChuaRepository.save(phieu);
-
-					redirectAttributes.addFlashAttribute("successMessage", "Đã xóa linh kiện thành công!");
-				} else {
-					redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy chi tiết cần xóa!");
-				}
+			if (chiTiet.getSoLuong() > 1) {
+				chiTiet.setSoLuong(chiTiet.getSoLuong() - 1);
+				chiTietSuaChuaRepository.save(chiTiet);
 			} else {
-				redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy phiếu sửa chữa!");
+				chiTietSuaChuaRepository.delete(chiTiet);
 			}
+
+			PhieuSuaChua phieu = phieuSuaChuaRepository.findById(maPhieu)
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu sửa chữa!"));
+			
+			entityManager.flush();
+			entityManager.refresh(phieu);
+			
+			phieu.tinhTongChiPhi();
+			phieuSuaChuaRepository.save(phieu);
+
+			redirectAttributes.addFlashAttribute("successMessage", "Đã xóa 1 đơn vị thành công!");
 		} catch (Exception e) {
 			redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi xóa linh kiện: " + e.getMessage());
 			e.printStackTrace();
 		}
-
 		return "redirect:/technician/cong-viec/" + maPhieu;
 	}
 }
