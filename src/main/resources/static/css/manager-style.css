@@ -1,0 +1,187 @@
+	/* General Body Styles */
+	body {
+	    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	    margin: 0;
+	    background-color: #f8f9fa;
+	    display: flex;
+	    height: 100vh;
+	}
+	
+	/* Sidebar Navigation */
+	.sidebar {
+	    width: 280px;
+	    background-color: #fff;
+	    border-right: 1px solid #dee2e6;
+	    display: flex;
+	    flex-direction: column;
+	    padding: 20px;
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+	}
+	
+	.sidebar h2 {
+	    font-size: 1.5em;
+	    margin-bottom: 30px;
+	    color: #343a40;
+	}
+	
+	.sidebar .nav-list {
+	    list-style: none;
+	    padding: 0;
+	    margin: 0;
+	    flex-grow: 1;
+	}
+	
+	.sidebar .nav-item a {
+	    display: block;
+	    padding: 12px 15px;
+	    text-decoration: none;
+	    color: #495057;
+	    border-radius: 6px;
+	    margin-bottom: 5px;
+	    transition: background-color 0.2s ease, color 0.2s ease;
+	}
+	
+	.sidebar .nav-item a:hover {
+	    background-color: #e9ecef;
+	    color: #007bff;
+	}
+	
+	.sidebar .nav-item a.active {
+	    background-color: #007bff;
+	    color: #fff;
+	    font-weight: bold;
+	}
+	
+	/* Main Content Area */
+	.main-content {
+	    flex-grow: 1;
+	    padding: 40px;
+	    overflow-y: auto;
+	}
+	
+	.main-content h1 {
+	    font-size: 2em;
+	    color: #343a40;
+	    margin-bottom: 30px;
+	    border-bottom: 2px solid #e9ecef;
+	    padding-bottom: 15px;
+	}
+	
+	/* Toolbar (Search, Filter, Buttons) */
+	.toolbar {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    margin-bottom: 25px;
+	}
+	
+	.search-bar {
+	    position: relative;
+	    width: 400px;
+	}
+	
+	.search-bar input {
+	    width: 100%;
+	    padding: 10px 15px 10px 40px; /* Add padding for icon */
+	    border: 1px solid #ced4da;
+	    border-radius: 6px;
+	    font-size: 1em;
+	}
+	
+	.search-bar i {
+	    position: absolute;
+	    left: 15px;
+	    top: 50%;
+	    transform: translateY(-50%);
+	    color: #6c757d;
+	}
+	
+	.filter-dropdown select {
+	    padding: 10px;
+	    border: 1px solid #ced4da;
+	    border-radius: 6px;
+	    margin-left: 15px;
+	    font-size: 1em;
+	}
+	
+	.btn-primary {
+	    background-color: #007bff;
+	    color: white;
+	    padding: 10px 20px;
+	    border: none;
+	    border-radius: 6px;
+	    cursor: pointer;
+	    font-size: 1em;
+	    transition: background-color 0.2s ease;
+	}
+	
+	.btn-primary:hover {
+	    background-color: #0056b3;
+	}
+	
+	/* Data Table */
+	.data-table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    background-color: #fff;
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+	    border-radius: 8px;
+	    overflow: hidden;
+	}
+	
+	.data-table th, .data-table td {
+	    padding: 15px;
+	    text-align: left;
+	    border-bottom: 1px solid #dee2e6;
+	}
+	
+	.data-table th {
+	    background-color: #f8f9fa;
+	    font-weight: 600;
+	    color: #495057;
+	}
+	
+	.data-table tr:last-child td {
+	    border-bottom: none;
+	}
+	
+	.data-table tr:hover {
+	    background-color: #f1f3f5;
+	}
+	
+	.action-buttons a {
+	    margin-right: 10px;
+	    color: #007bff;
+	    text-decoration: none;
+	}
+	
+	.action-buttons .delete {
+	    color: #dc3545;
+	}
+	
+	/* Status Tags */
+	.status {
+	    padding: 5px 10px;
+	    border-radius: 15px;
+	    font-size: 0.8em;
+	    font-weight: bold;
+	    color: #fff;
+	}
+	.status-active { background-color: #28a745; }
+	.status-locked { background-color: #dc3545; }
+	
+	/* Sidebar sub-items and footer styles */
+	.sidebar-footer { flex-shrink: 0; }
+	.nav-header span {
+	    padding: 12px 15px;
+	    display: block;
+	    color: #6c757d;
+	    font-weight: bold;
+	    font-size: 0.9em;
+	    text-transform: uppercase;
+	    letter-spacing: 0.5px;
+	}
+	.nav-item.sub-item a { padding-left: 57px; font-size: 0.95em; }
+	.user-info span { font-weight: 500; color: #495057; }
+	.user-info .logout-link { color: #dc3545; text-decoration: none; font-size: 0.9em; }
+	.user-info .logout-link:hover { text-decoration: underline; }

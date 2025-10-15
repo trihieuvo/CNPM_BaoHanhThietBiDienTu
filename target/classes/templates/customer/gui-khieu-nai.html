@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gửi yêu cầu/khiếu nại</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div th:replace="~{customer/fragments :: sidebar(activePage='khieu-nai', khachHang=${khachHang})}"></div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="header">
+                <div>
+                    <h1>Gửi yêu cầu/khiếu nại</h1>
+                    <p class="text-muted">Chúng tôi luôn lắng nghe ý kiến của bạn</p>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>📢 Hướng dẫn</h3>
+                <p>
+                    Vui lòng mô tả chi tiết yêu cầu hoặc vấn đề của bạn. 
+                    Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.
+                </p>
+            </div>
+
+            <form action="/customer/khieu-nai" method="post">
+                <div class="form-group">
+                    <label for="tieuDe">Tiêu đề: <span style="color: red;">*</span></label>
+                    <input type="text" 
+                           id="tieuDe" 
+                           name="tieuDe" 
+                           placeholder="Nhập tiêu đề ngắn gọn"
+                           maxlength="200"
+                           required
+                           autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="noiDung">Nội dung: <span style="color: red;">*</span></label>
+                    <textarea id="noiDung" 
+                              name="noiDung" 
+                              rows="8"
+                              placeholder="Mô tả chi tiết vấn đề hoặc yêu cầu của bạn..."
+                              required></textarea>
+                    <small>Vui lòng cung cấp càng nhiều thông tin càng tốt</small>
+                </div>
+
+                <div class="suggestion-box">
+                    <strong>💡 Gợi ý:</strong>
+                    <ul>
+                        <li>Nêu rõ mã phiếu sửa chữa (nếu có)</li>
+                        <li>Mô tả cụ thể vấn đề đang gặp phải</li>
+                        <li>Đề xuất giải pháp (nếu có)</li>
+                    </ul>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn">📤 Gửi khiếu nại</button>
+                    <a href="/customer/dashboard" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+
+            <div class="contact-section">
+                <h3>📞 Thông tin liên hệ khác</h3>
+                <div class="contact-details">
+                    <p><strong>Hotline:</strong> 1900-xxxx (8:00 - 20:00 hàng ngày)</p>
+                    <p><strong>Email:</strong> support@baohanh.com</p>
+                    <p><strong>Địa chỉ:</strong> 123 Đường ABC, Quận XYZ, TP.HCM</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} ?: 'Trung tâm Bảo hành'">Trung tâm Bảo hành</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 class="text-center mb-4">NV Tiếp Tân</h2>
+    
+    <ul class="nav-list">
+        <li class="nav-item">
+            <a th:href="@{/receptionist/dashboard}" th:classappend="${#httpServletRequest.getRequestURI().startsWith('/receptionist/dashboard') ? 'active' : ''}">
+                <i class="fa-solid fa-tachometer-alt fa-fw"></i>
+                <span>Tổng quan</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/receptionist/tiep-nhan}" th:classappend="${#httpServletRequest.getRequestURI().startsWith('/receptionist/tiep-nhan') ? 'active' : ''}">
+                <i class="fa-solid fa-file-circle-plus fa-fw"></i>
+                <span>Tiếp nhận bảo hành</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/receptionist/tra-cuu}" th:classappend="${#httpServletRequest.getRequestURI().startsWith('/receptionist/tra-cuu') ? 'active' : ''}">
+                <i class="fa-solid fa-search fa-fw"></i>
+                <span>Tra cứu</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/receptionist/tra-thiet-bi}" th:classappend="${#httpServletRequest.getRequestURI().startsWith('/receptionist/tra-thiet-bi') ? 'active' : ''}">
+                <i class="fa-solid fa-dolly fa-fw"></i>
+                <span>Trả thiết bị</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+         <div class="user-info">
+            <span>
+                <i class="fa-solid fa-user-circle"></i>
+                <span th:text="${#authentication.name}">username</span>
+            </span>
+            <a th:href="@{/logout}" class="logout-link" title="Đăng xuất">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div th:replace="${content}">
+        <h1>Chào mừng bạn đến với hệ thống</h1>
+        <p>Vui lòng chọn một chức năng từ thanh điều hướng bên trái để bắt đầu làm việc.</p>
+    </div>
+</div>
+
+</body>
+</html>

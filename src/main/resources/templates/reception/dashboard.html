@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="content">
+
+    <div class="header">
+        <div>
+            <h1>Tổng quan</h1>
+            <p class="text-muted">Xem nhanh các số liệu quan trọng trong ngày.</p>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="icon" style="color: #f59e0b;">
+                <i class="fa-solid fa-hourglass-start"></i>
+            </div>
+            <div class="number" th:text="${phieuChoSua}">0</div>
+            <div class="label">Phiếu Chờ Sửa</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="icon" style="color: #3b82f6;">
+                <i class="fa-solid fa-gears"></i>
+            </div>
+            <div class="number" th:text="${phieuDangSua}">0</div>
+            <div class="label">Phiếu Đang Sửa</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="icon" style="color: #10b981;">
+                <i class="fa-solid fa-check-double"></i>
+            </div>
+            <div class="number" th:text="${phieuDaSuaXong}">0</div>
+            <div class="label">Phiếu Đã Xong</div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <h2>Hành động nhanh</h2>
+        <div class="quick-actions mt-3">
+             <a th:href="@{/receptionist/tiep-nhan}" class="action-btn">
+                <div class="icon"><i class="fa-solid fa-file-circle-plus"></i></div>
+                <span>Tiếp nhận mới</span>
+            </a>
+            <a th:href="@{/receptionist/tra-cuu}" class="action-btn">
+                <div class="icon"><i class="fa-solid fa-search"></i></div>
+                <span>Tra cứu phiếu</span>
+            </a>
+            <a th:href="@{/receptionist/tra-thiet-bi}" class="action-btn">
+                <div class="icon"><i class="fa-solid fa-dolly"></i></div>
+                <span>Trả thiết bị</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
