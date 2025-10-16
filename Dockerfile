@@ -1,23 +1,32 @@
-# Sử dụng một base image có chứa Java 21
-FROM openjdk:21-jdk-slim
+# STAGE 1: Build a project with Maven
+FROM maven:3.8-openjdk-21 AS build
 
-# Thiết lập thư mục làm việc bên trong container
+# Set the working directory
 WORKDIR /app
 
-# Copy file pom.xml và tải các dependency để tận dụng caching
+# Copy the pom.xml file to download dependencies
 COPY pom.xml .
-COPY .mvn/ .mvn
-COPY mvnw .
-RUN ./mvnw dependency:go-offline
 
-# Copy toàn bộ mã nguồn còn lại
+# Download all dependencies to take advantage of Docker layer caching
+RUN mvn dependency:go-offline
+
+# Copy your source code
 COPY src ./src
 
-# Build ứng dụng, bỏ qua các bài test để build nhanh hơn
-RUN ./mvnw package -DskipTests
+# Package the application, skipping the tests to build faster
+RUN mvn package -DskipTests
 
-# Mở cổng 8080 mà Spring Boot thường chạy
+# STAGE 2: Create a lightweight image to run the application
+FROM openjdk:21-jdk-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the executable JAR file from the build stage
+COPY --from=build /app/target/trungtambaohanh-0.0.1-SNAPSHOT.jar .
+
+# Expose the port your app runs on
 EXPOSE 8080
 
-# Lệnh để chạy ứng dụng khi container khởi động
-ENTRYPOINT ["java", "-jar", "target/trungtambaohanh-0.0.1-SNAPSHOT.jar"]
+# The command to run your application
+ENTRYPOINT ["java", "-jar", "trungtambaohanh-0.0.1-SNAPSHOT.jar"]
