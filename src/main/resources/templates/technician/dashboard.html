@@ -5,6 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bảng điều khiển Kỹ thuật viên</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .action-cell {
+            display: flex;
+            align-items: center;
+            gap: 16px; /* Tăng khoảng cách giữa các nút */
+            white-space: nowrap; /* Ngăn không cho văn bản xuống dòng */
+        }
+        .delete-btn-link {
+            border: none;
+            background: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            font-family: inherit;
+            font-size: inherit;
+        }
+        .delete-btn-link:hover { color: #dc2626; }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0; }
+        .pagination a, .pagination span { padding: 8px 16px; border: 1px solid #e2e8f0; text-decoration: none; color: #64748b; border-radius: 6px; transition: background-color 0.2s; }
+        .pagination a:hover { background-color: #f1f5f9; }
+        .pagination .active { background-color: #667eea; color: white; border-color: #667eea; font-weight: bold; }
+        .pagination .disabled { color: #cbd5e1; pointer-events: none; background-color: #f8fafc; }
+        .search-container { margin-bottom: 24px; }
+        .search-container input { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1.5px solid #e2e8f0; font-size: 16px; }
+        .search-container input:focus { outline: none; border-color: #667eea; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -15,47 +42,130 @@
                     <p class="text-muted">Danh sách công việc được giao</p>
                 </div>
                 <div>
-                    <a href="/technician/linh-kien" class="btn btn-outline">Tra cứu linh kiện</a>
-                    <a href="/logout" class="btn btn-secondary" style="margin-left: 8px;">Đăng xuất</a>
+                    <a href="/logout" class="btn btn-secondary">Đăng xuất</a>
                 </div>
             </div>
             
-            <div th:if="${congViecList.isEmpty()}" class="text-center" style="padding: 48px 0;">
-                <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
-                <h3 style="color: #64748b;">Chưa có công việc nào</h3>
-                <p class="text-muted">Bạn chưa được giao công việc nào</p>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm phiếu theo mã, khách hàng, thiết bị..." th:value="${keyword}">
             </div>
-            
-            <table th:if="${!congViecList.isEmpty()}">
-                <thead>
-                    <tr>
-                        <th>Mã Phiếu</th>
-                        <th>Tên Khách Hàng</th>
-                        <th>Thiết Bị</th>
-                        <th>Ngày Tiếp Nhận</th>
-                        <th>Trạng Thái</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="phieu : ${congViecList}">
-                        <td><strong th:text="${phieu.maPhieu}"></strong></td>
-                        <td th:text="${phieu.khachHang.hoTen}"></td>
-                        <td th:text="${phieu.thietBi.model}"></td>
-                        <td th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></td>
-                        <td>
-                            <span class="badge" 
-                                  th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' : (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : (${phieu.trangThai == 'Đã sửa xong'} ? 'badge-info' : 'badge-danger'))"
-                                  th:text="${phieu.trangThai}">
-                            </span>
-                        </td>
-                        <td>
-                            <a th:href="@{/technician/cong-viec/{id}(id=${phieu.maPhieu})}" class="link">Xem chi tiết</a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+
+            <div id="results-container" th:fragment="results-fragment">
+                <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Phiếu</th>
+                            <th style="min-width: 200px;">Tên Khách Hàng</th>
+                            <th style="min-width: 180px;">Thiết Bị</th>
+                            <th>Ngày Tiếp Nhận</th>
+                            <th>Trạng Thái</th>
+                            <th style="min-width: 140px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${congViecPage.empty}">
+                             <td colspan="6" style="text-align: center; padding: 48px 0;">
+                                <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                                <h3 style="color: #64748b;">Không có công việc nào</h3>
+                                <p class="text-muted">Không tìm thấy kết quả phù hợp.</p>
+                            </td>
+                        </tr>
+                        <tr th:each="phieu : ${congViecPage.content}">
+                            <td><strong th:text="${phieu.maPhieu}"></strong></td>
+                            <td th:text="${phieu.khachHang.hoTen}"></td>
+                            <td th:text="${phieu.thietBi.model}"></td>
+                            <td th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></td>
+                            <td>
+                                <span class="badge" 
+                                      th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' : (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : (${phieu.trangThai == 'Đã sửa xong' or phieu.trangThai == 'Hoàn thành'} ? 'badge-info' : 'badge-danger'))"
+                                      th:text="${phieu.trangThai}">
+                                </span>
+                            </td>
+                            <td class="action-cell">
+                                <a th:href="@{/technician/cong-viec/{id}(id=${phieu.maPhieu})}" class="link">Xem chi tiết</a>
+                                <th:block th:with="completedStatuses=${#lists.toList({'Đã sửa xong', 'Hoàn thành', 'Đã trả khách'})}">
+                                    <div th:if="${#lists.contains(completedStatuses, phieu.trangThai)}">
+                                        <form th:action="@{/technician/cong-viec/delete/{id}(id=${phieu.maPhieu})}" method="post">
+                                            <button type="submit" class="delete-btn-link"
+                                                    th:onclick="'return confirm(\'Bạn có chắc chắn muốn xóa phiếu #' + ${phieu.maPhieu} + '? Hành động này không thể hoàn tác.\');'">
+                                                Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+                                </th:block>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div th:if="${congViecPage.totalPages > 1}" class="pagination">
+                    <a th:href="@{/technician/dashboard(keyword=${keyword}, page=0)}" th:classappend="${congViecPage.first} ? 'disabled' : ''">« Đầu</a>
+                    <a th:href="@{/technician/dashboard(keyword=${keyword}, page=${congViecPage.number - 1})}" th:classappend="${congViecPage.first} ? 'disabled' : ''">‹ Trước</a>
+        
+                    <th:block th:each="i : ${#numbers.sequence(0, congViecPage.totalPages - 1)}">
+                        <a th:if="${i >= congViecPage.number - 2 and i <= congViecPage.number + 2}"
+                           th:href="@{/technician/dashboard(keyword=${keyword}, page=${i})}"
+                           th:classappend="${i == congViecPage.number} ? 'active' : ''"
+                           th:text="${i + 1}"></a>
+                    </th:block>
+        
+                    <a th:href="@{/technician/dashboard(keyword=${keyword}, page=${congViecPage.number + 1})}" th:classappend="${congViecPage.last} ? 'disabled' : ''">Sau ›</a>
+                    <a th:href="@{/technician/dashboard(keyword=${keyword}, page=${congViecPage.totalPages - 1})}" th:classappend="${congViecPage.last} ? 'disabled' : ''">Cuối »</a>
+                </div>
+            </div> </div>
     </div>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchInput');
+        const cardBody = document.querySelector('.card'); // Sử dụng phần tử cha không thay đổi
+        let debounceTimer;
+
+        function loadResults(keyword, page) {
+            const url = `/technician/dashboard?keyword=${encodeURIComponent(keyword)}&page=${page}`;
+            
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const currentContainer = document.getElementById('results-container');
+                if (currentContainer) {
+                    currentContainer.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching results:', error);
+                const container = document.getElementById('results-container');
+                if(container) {
+                    container.innerHTML = '<p style="color: red; text-align: center;">Lỗi tải dữ liệu.</p>';
+                }
+            });
+        }
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            const keyword = this.value;
+            debounceTimer = setTimeout(() => {
+                loadResults(keyword, 0);
+            }, 350);
+        });
+        
+        // Sử dụng event delegation trên phần tử cha
+        cardBody.addEventListener('click', function(e) {
+            // Kiểm tra nếu phần tử được click là một link phân trang (`.pagination a`)
+            if (e.target.matches('.pagination a') && !e.target.classList.contains('disabled')) {
+                e.preventDefault();
+                const url = new URL(e.target.href);
+                const page = url.searchParams.get('page');
+                const keyword = searchInput.value;
+                loadResults(keyword, page);
+            }
+        });
+    });
+    </script>
 </body>
 </html>

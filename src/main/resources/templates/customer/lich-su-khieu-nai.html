@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử khiếu nại</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* CSS cho Modal (Cửa sổ chi tiết) */
+        .modal {
+            display: none; position: fixed; z-index: 1001; left: 0; top: 0;
+            width: 100%; height: 100%; overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content {
+            background-color: #fff; margin: 10% auto; padding: 30px;
+            width: 90%; max-width: 650px;
+            border-radius: 12px; position: relative;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        @keyframes fadeIn { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 15px; margin-bottom: 20px;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.5em; }
+        .close-btn { color: #aaa; font-size: 32px; font-weight: bold; cursor: pointer; }
+        .close-btn:hover { color: #333; }
+        .modal-body p { margin-bottom: 10px; }
+        .modal-body strong { color: var(--text-secondary); min-width: 120px; display: inline-block; }
+        #modal-noidung {
+            background: #f8fafc; padding: 15px; border-radius: 8px;
+            margin-top: 10px; white-space: pre-wrap;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="~{customer/fragments :: sidebar(activePage='lich-su-khieu-nai', khachHang=${khachHang})}"></div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="header">
+                <div>
+                    <h1>Lịch sử khiếu nại</h1>
+                    <p class="text-muted">Theo dõi tất cả các yêu cầu và khiếu nại bạn đã gửi</p>
+                </div>
+                 <a th:href="@{/customer/khieu-nai}" class="btn"><i class="fas fa-plus"></i> Gửi khiếu nại mới</a>
+            </div>
+
+            <div th:if="${danhSachKhieuNai.isEmpty()}" class="empty-state">
+                <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                <h3 style="color: #64748b;">Chưa có khiếu nại nào</h3>
+                <p class="text-muted">Bạn chưa gửi yêu cầu hay khiếu nại nào cho chúng tôi.</p>
+            </div>
+
+            <table th:if="${!danhSachKhieuNai.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th>Mã KN</th>
+                        <th>Về Phiếu Sửa</th>
+                        <th>Tiêu đề</th>
+                        <th>Ngày gửi</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="kn : ${danhSachKhieuNai}" class="complaint-row"
+                        th:data-id="${kn.maKhieuNai}"
+                        th:data-tieude="${kn.tieuDe}"
+                        th:data-ngaygui="${#temporals.format(kn.ngayGui, 'dd-MM-yyyy HH:mm')}"
+                        th:data-trangthai="${kn.trangThai}"
+                        th:data-maphieu="${kn.phieuSuaChua.maPhieu}"
+                        th:data-noidung="${kn.noiDung}">
+                        <td><strong th:text="${kn.maKhieuNai}"></strong></td>
+                        <td>
+                            <a th:href="@{/customer/phieu-sua-chua/{id}(id=${kn.phieuSuaChua.maPhieu})}" class="link" th:text="|#${kn.phieuSuaChua.maPhieu}|"></a>
+                        </td>
+                        <td th:text="${kn.tieuDe}"></td>
+                        <td th:text="${#temporals.format(kn.ngayGui, 'dd-MM-yyyy HH:mm')}"></td>
+                        <td>
+                            <span class="badge" th:classappend="${kn.trangThai == 'Đã giải quyết'} ? 'badge-success' : (${kn.trangThai == 'Đang xử lý'} ? 'badge-warning' : 'badge-info')" th:text="${kn.trangThai}"></span>
+                        </td>
+                        <td>
+                            <a href="#" class="link view-details-btn">Xem chi tiết →</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Chi tiết Khiếu nại</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p><strong>Mã khiếu nại:</strong> <span id="modal-id"></span></p>
+                <p><strong>Ngày gửi:</strong> <span id="modal-ngaygui"></span></p>
+                <p><strong>Trạng thái:</strong> <span id="modal-trangthai"></span></p>
+                <p><strong>Về phiếu sửa:</strong> <a id="modal-maphieu-link" href="#" class="link">#<span id="modal-maphieu"></span></a></p>
+                <p><strong>Tiêu đề:</strong> <span id="modal-tieude"></span></p>
+                <p><strong>Nội dung chi tiết:</strong></p>
+                <div id="modal-noidung"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('details-modal');
+            const closeBtn = document.querySelector('.close-btn');
+
+            function openModal() { modal.style.display = 'block'; }
+            function closeModal() { modal.style.display = 'none'; }
+
+            document.querySelectorAll('.view-details-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const row = this.closest('.complaint-row');
+                    const data = row.dataset;
+
+                    document.getElementById('modal-title').innerText = `Chi tiết Khiếu nại #${data.id}`;
+                    document.getElementById('modal-id').innerText = data.id;
+                    document.getElementById('modal-ngaygui').innerText = data.ngaygui;
+                    document.getElementById('modal-trangthai').innerText = data.trangthai;
+                    document.getElementById('modal-maphieu').innerText = data.maphieu;
+                    document.getElementById('modal-maphieu-link').href = `/customer/phieu-sua-chua/${data.maphieu}`;
+                    document.getElementById('modal-tieude').innerText = data.tieude;
+                    document.getElementById('modal-noidung').innerText = data.noidung;
+
+                    openModal();
+                });
+            });
+
+            closeBtn.onclick = closeModal;
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    closeModal();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

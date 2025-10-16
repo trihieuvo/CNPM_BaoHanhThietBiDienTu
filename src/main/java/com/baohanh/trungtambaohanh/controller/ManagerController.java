@@ -1,15 +1,18 @@
 package com.baohanh.trungtambaohanh.controller;
 
+import com.baohanh.trungtambaohanh.dto.ChartDataDto;
 import com.baohanh.trungtambaohanh.dto.DashboardStatsDto;
 import com.baohanh.trungtambaohanh.dto.LinhKienDetailDto;
 import com.baohanh.trungtambaohanh.dto.NhanVienDto;
 import com.baohanh.trungtambaohanh.dto.PhieuSuaChuaDetailDto;
-import com.baohanh.trungtambaohanh.dto.TicketStatsDto; 
+import com.baohanh.trungtambaohanh.dto.TicketStatsDto;
+import com.baohanh.trungtambaohanh.entity.KhieuNai;
 import com.baohanh.trungtambaohanh.entity.LinhKien;
 import com.baohanh.trungtambaohanh.entity.LoaiThietBi;
 import com.baohanh.trungtambaohanh.entity.NhanVien;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua; 
 import com.baohanh.trungtambaohanh.entity.TaiKhoan;
+import com.baohanh.trungtambaohanh.repository.KhieuNaiRepository;
 import com.baohanh.trungtambaohanh.repository.LinhKienRepository;
 import com.baohanh.trungtambaohanh.repository.LoaiThietBiRepository;
 import com.baohanh.trungtambaohanh.repository.NhanVienRepository;
@@ -18,24 +21,43 @@ import com.baohanh.trungtambaohanh.repository.TaiKhoanRepository;
 import com.baohanh.trungtambaohanh.repository.VaiTroRepository;
 import com.baohanh.trungtambaohanh.service.BaoCaoService;
 import com.baohanh.trungtambaohanh.service.DashboardService;
+import com.baohanh.trungtambaohanh.service.ExcelExportService;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import com.baohanh.trungtambaohanh.service.TaiKhoanService;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.baohanh.trungtambaohanh.dto.ChartDataDto; 
+
+import java.io.ByteArrayInputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -54,7 +76,10 @@ public class ManagerController {
     private final TaiKhoanRepository taiKhoanRepository;
     private final TaiKhoanService taiKhoanService;
     private final BaoCaoService baoCaoService;
-
+    private final ExcelExportService excelExportService;
+    private final PasswordEncoder passwordEncoder;
+    private final KhieuNaiRepository khieuNaiRepository;
+    
     @Autowired
     public ManagerController(DashboardService dashboardService,
                              LoaiThietBiRepository loaiThietBiRepository,
@@ -64,7 +89,10 @@ public class ManagerController {
                              VaiTroRepository vaiTroRepository, 
                              TaiKhoanRepository taiKhoanRepository, 
                              TaiKhoanService taiKhoanService,
-                             BaoCaoService baoCaoService) {
+                             BaoCaoService baoCaoService,
+                             ExcelExportService excelExportService,
+                             PasswordEncoder passwordEncoder,
+                             KhieuNaiRepository khieuNaiRepository) {
         this.dashboardService = dashboardService;
         this.loaiThietBiRepository = loaiThietBiRepository;
         this.linhKienRepository = linhKienRepository;
@@ -74,6 +102,9 @@ public class ManagerController {
         this.taiKhoanRepository = taiKhoanRepository; 
         this.taiKhoanService = taiKhoanService; 
         this.baoCaoService = baoCaoService;
+        this.excelExportService = excelExportService;
+        this.passwordEncoder = passwordEncoder;
+        this.khieuNaiRepository = khieuNaiRepository;
     }
     
     
@@ -103,8 +134,16 @@ public class ManagerController {
     // Trang Dashboard thống kê
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
+        // Dữ liệu cho KPIs
         DashboardStatsDto stats = dashboardService.getDashboardStats();
         model.addAttribute("stats", stats);
+
+        // Dữ liệu cho biểu đồ trạng thái phiếu sửa
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime aMonthAgo = now.minusMonths(1);
+        ChartDataDto statusChartData = baoCaoService.getPhieuTheoTrangThaiChart(aMonthAgo, now, null, null);
+        model.addAttribute("statusChartData", statusChartData);
+
         return "manager/dashboard";
     }
 
@@ -141,56 +180,68 @@ public class ManagerController {
         return "redirect:/manager/devices";
     }
 
-    // --- CÁC TRANG CHƯA PHÁT TRIỂN (PLACEHOLDER) ---
-
-    // ================= START: CẬP NHẬT TÍNH NĂNG THEO DÕI PHIẾU SỬA =================
+ 
     @GetMapping("/tickets")
     public String showTicketsPage(@RequestParam(value = "keyword", required = false) String keyword,
                                   @RequestParam(value = "status", required = false) String status,
-                                  Model model) {
-        // 1. Lấy danh sách phiếu sửa chữa đã được tìm kiếm và lọc
-        List<PhieuSuaChua> filteredTickets = phieuSuaChuaRepository.searchAndFilter(keyword, status);
+                                  @RequestParam(name = "page", defaultValue = "0") int page, // Thêm page
+                                  @RequestParam(name = "size", defaultValue = "10") int size, // Thêm size
+                                  Model model, HttpServletRequest request) {
 
-        // 2. Tính toán các số liệu thống kê (giữ nguyên như cũ)
+        PageRequest pageable = PageRequest.of(page, size); // Tạo Pageable
+        Page<PhieuSuaChua> phieuSuaChuaPage = phieuSuaChuaRepository.searchAndFilter(keyword, status, pageable); // Gọi phương thức mới
+
+        // Phần tính toán các chỉ số thống kê giữ nguyên
         long moiTiepNhan = phieuSuaChuaRepository.countByTrangThai("Mới tiếp nhận");
         long dangSuaChua = phieuSuaChuaRepository.countByTrangThai("Đang sửa chữa");
         long choLinhKien = phieuSuaChuaRepository.countByTrangThai("Chờ linh kiện");
         long daHoanThanh = phieuSuaChuaRepository.countByTrangThai("Đã sửa xong") + phieuSuaChuaRepository.countByTrangThai("Đã trả khách");
-        long treHen = 0; // Tạm thời
+        long treHen = 0; // Logic sẽ được phát triển sau
         TicketStatsDto ticketStats = new TicketStatsDto(moiTiepNhan, dangSuaChua, choLinhKien, daHoanThanh, treHen);
 
-        // 3. Đưa dữ liệu vào model
-        model.addAttribute("phieuSuaChuaList", filteredTickets);
+        model.addAttribute("phieuSuaChuaPage", phieuSuaChuaPage); // THAY ĐỔI: Đưa Page object vào model
         model.addAttribute("ticketStats", ticketStats);
-        model.addAttribute("keyword", keyword); // Trả lại keyword để hiển thị trên ô tìm kiếm
-        model.addAttribute("currentStatus", status); // Trả lại status để chọn đúng option trong dropdown
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("currentStatus", status);
 
-        return "manager/tickets";
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/tickets :: results-fragment"; 
+        }
+
+        return "manager/tickets"; 
     }
-    // ================= END: CẬP NHẬT TÍNH NĂNG THEO DÕI PHIẾU SỬA =================
+ 
 
 
     @GetMapping("/parts")
-    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword, Model model) {
-        List<LinhKien> linhKienList;
-        if (keyword != null && !keyword.isEmpty()) {
-            linhKienList = linhKienRepository.searchByKeyword(keyword);
-        } else {
-            linhKienList = linhKienRepository.findAll();
-        }
+    public String showPartsPage(@RequestParam(value = "keyword", required = false) String keyword,
+                                @RequestParam(name = "page", defaultValue = "0") int page,
+                                @RequestParam(name = "size", defaultValue = "8") int size,
+                                Model model, HttpServletRequest request) {
+
+    	PageRequest pageable = PageRequest.of(page, size, Sort.by("maLinhKien").descending()); 
         
-        model.addAttribute("linhKienList", linhKienList);
+        // Luôn gọi phương thức có phân trang
+        Page<LinhKien> linhKienPage = linhKienRepository.searchByKeyword(keyword, pageable);
+        
+        model.addAttribute("linhKienPage", linhKienPage); // Đổi tên attribute thành "linhKienPage"
         model.addAttribute("keyword", keyword);
         
-        // Thêm các thuộc tính cần cho modal Thêm/Sửa
         if (!model.containsAttribute("linhKien")) {
             model.addAttribute("linhKien", new LinhKien());
         }
-        // Lấy danh sách loại thiết bị để hiển thị trong dropdown
         model.addAttribute("loaiThietBiList", loaiThietBiRepository.findAll());
+
+        // Kiểm tra AJAX request để trả về fragment
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/parts :: results-fragment"; 
+        }
         
         return "manager/parts";
     }
+
     
     @PostMapping("/parts/save")
     public String savePart(@ModelAttribute("linhKien") LinhKien linhKien, RedirectAttributes redirectAttributes) {
@@ -219,20 +270,30 @@ public class ManagerController {
     
     
     @GetMapping("/employees")
-	public String showEmployeesPage(@RequestParam(value = "keyword", required = false) String keyword,
-			@RequestParam(value = "vaiTroId", required = false) Integer vaiTroId, Model model) {
-		List<NhanVien> nhanVienList = nhanVienRepository.searchAndFilter(keyword, vaiTroId);
+    public String showEmployeesPage(@RequestParam(value = "keyword", required = false) String keyword,
+                                    @RequestParam(value = "vaiTroId", required = false) Integer vaiTroId,
+                                    @RequestParam(name = "page", defaultValue = "0") int page, // Thêm tham số page
+                                    @RequestParam(name = "size", defaultValue = "8") int size,   // Thêm tham số size
+                                    Model model, HttpServletRequest request) {
 
-		model.addAttribute("nhanVienList", nhanVienList);
-		model.addAttribute("vaiTroList", vaiTroRepository.findAll()); // Dùng cho bộ lọc và modal
-		model.addAttribute("keyword", keyword);
-		model.addAttribute("currentVaiTroId", vaiTroId);
+        PageRequest pageable = PageRequest.of(page, size); // Tạo đối tượng Pageable
+        Page<NhanVien> nhanVienPage = nhanVienRepository.searchAndFilter(keyword, vaiTroId, pageable); // Gọi phương thức mới
 
-		if (!model.containsAttribute("nhanVienDto")) {
-			model.addAttribute("nhanVienDto", new NhanVienDto());
-		}
+        model.addAttribute("nhanVienPage", nhanVienPage); // Đổi tên attribute thành "nhanVienPage"
+        model.addAttribute("vaiTroList", vaiTroRepository.findAll());
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("currentVaiTroId", vaiTroId);
 
-		return "manager/employees";
+        if (!model.containsAttribute("nhanVienDto")) {
+            model.addAttribute("nhanVienDto", new NhanVienDto());
+        }
+
+        String requestedWithHeader = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+            return "manager/employees :: results-fragment";
+        }
+
+        return "manager/employees";
     }
     @PostMapping("/employees/save")
     public String saveEmployee(@ModelAttribute("nhanVienDto") NhanVienDto nhanVienDto,
@@ -348,5 +409,164 @@ public class ManagerController {
 
 
         return "manager/revenue-report";
+    }
+    
+    @GetMapping("/revenue-report/export")
+    public ResponseEntity<InputStreamResource> exportRevenueReportToExcel(
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(value = "ktvId", required = false) Integer ktvId) {
+        
+        // --- Logic lấy dữ liệu (giữ nguyên như cũ) ---
+        if (startDate == null) startDate = LocalDate.now().withDayOfMonth(1);
+        if (endDate == null) endDate = LocalDate.now();
+        OffsetDateTime startDateTime = startDate.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDateTime = endDate.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+        List<PhieuSuaChua> phieuList = baoCaoService.getPhieuSuaChuaHoanThanh(startDateTime, endDateTime, ktvId);
+
+        // --- Tạo tên file động và mã hóa nó ---
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        String ktvName = "Tat_Ca_KTV"; // Dùng gạch dưới cho an toàn
+        if (ktvId != null) {
+            Optional<NhanVien> nv = nhanVienRepository.findById(ktvId);
+            if (nv.isPresent()) {
+                // Thay thế khoảng trắng bằng gạch dưới
+                ktvName = nv.get().getHoTen().replaceAll("\\s+", "_"); 
+            }
+        }
+        String rawFileName = String.format("BaoCaoDoanhThu_%s_Tu_%s_Den_%s.xlsx", 
+                                        ktvName, 
+                                        startDate.format(formatter), 
+                                        endDate.format(formatter));
+        
+        // Mã hóa tên file để hỗ trợ ký tự Unicode (tiếng Việt)
+        String encodedFileName = URLEncoder.encode(rawFileName, StandardCharsets.UTF_8).replace("+", "%20");
+
+        // --- Gọi service và trả về file với header đã được sửa lỗi ---
+        ByteArrayInputStream in = excelExportService.createRevenueReportExcel(phieuList);
+
+        HttpHeaders headers = new HttpHeaders();
+        // Cú pháp `filename*=` đảm bảo trình duyệt hiểu đúng tên file đã được mã hóa
+        headers.add("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(new InputStreamResource(in));
+    }
+    
+    @GetMapping("/repair-stats")
+    public String showRepairStatsPage(
+            @RequestParam(value = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(value = "ktvId", required = false) Integer ktvId,
+            @RequestParam(value = "loaiThietBiId", required = false) Integer loaiThietBiId,
+            Model model) {
+
+        if (startDate == null) startDate = LocalDate.now().withDayOfMonth(1);
+        if (endDate == null) endDate = LocalDate.now();
+
+        OffsetDateTime startDateTime = startDate.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime endDateTime = endDate.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
+
+        model.addAttribute("kpis", baoCaoService.tinhToanThongKeSuaChuaKpis(startDateTime, endDateTime, ktvId, loaiThietBiId));
+        model.addAttribute("statusChart", baoCaoService.getPhieuTheoTrangThaiChart(startDateTime, endDateTime, ktvId, loaiThietBiId));
+        model.addAttribute("ktvChart", baoCaoService.getPhieuTheoKtvChart(startDateTime, endDateTime, loaiThietBiId));
+        model.addAttribute("linhKienStats", baoCaoService.getThongKeSuDungLinhKien(startDateTime, endDateTime, ktvId, loaiThietBiId));
+        
+        // Dữ liệu cho bộ lọc
+        model.addAttribute("technicians", nhanVienRepository.findAllTechnicians());
+        model.addAttribute("deviceTypes", loaiThietBiRepository.findAll());
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("currentKtvId", ktvId);
+        model.addAttribute("currentDeviceTypeId", loaiThietBiId);
+        
+        return "manager/repair-stats";
+    }
+    @GetMapping("/change-password")
+    public String showChangePasswordForm() {
+        return "manager/change-password";
+    }
+
+    // Xử lý yêu cầu đổi mật khẩu
+    @PostMapping("/change-password")
+    public String processChangePassword(
+            @RequestParam("currentPassword") String currentPassword,
+            @RequestParam("newPassword") String newPassword,
+            @RequestParam("confirmPassword") String confirmPassword,
+            Principal principal,
+            RedirectAttributes redirectAttributes) {
+
+        // Lấy thông tin tài khoản quản lý đang đăng nhập
+        String username = principal.getName();
+        NhanVien manager = nhanVienRepository.findByTaiKhoan_TenDangNhap(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản quản lý."));
+
+        TaiKhoan taiKhoan = manager.getTaiKhoan();
+
+        // 1. Kiểm tra mật khẩu hiện tại có đúng không
+        if (!passwordEncoder.matches(currentPassword, taiKhoan.getMatKhauHash())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu hiện tại không đúng!");
+            return "redirect:/manager/change-password";
+        }
+
+        // 2. Kiểm tra mật khẩu mới có đủ dài không
+        if (newPassword.length() < 6) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu mới phải có ít nhất 6 ký tự.");
+            return "redirect:/manager/change-password";
+        }
+
+        // 3. Kiểm tra mật khẩu mới và mật khẩu xác nhận có khớp không
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Mật khẩu mới và mật khẩu xác nhận không khớp!");
+            return "redirect:/manager/change-password";
+        }
+
+        // 4. Cập nhật mật khẩu mới
+        taiKhoan.setMatKhauHash(passwordEncoder.encode(newPassword));
+        taiKhoanRepository.save(taiKhoan);
+
+        redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
+        return "redirect:/manager/change-password";
+    }
+    @GetMapping("/settings")
+    public String showSettingsPage() {
+        return "manager/settings";
+    }
+    @GetMapping("/complaints")
+    public String showComplaintsPage(@RequestParam(name = "page", defaultValue = "0") int page,
+                                     @RequestParam(name = "size", defaultValue = "10") int size,
+                                     Model model) {
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by("ngayGui").descending());
+        Page<KhieuNai> complaintPage = khieuNaiRepository.findAll(pageable);
+
+        model.addAttribute("complaintPage", complaintPage);
+
+        return "manager/complaints"; 
+    }
+    @PostMapping("/complaints/update-status")
+    public String updateComplaintStatus(@RequestParam("complaintId") Integer complaintId,
+                                        @RequestParam("status") String status,
+                                        Principal principal,
+                                        RedirectAttributes redirectAttributes) {
+
+        Optional<KhieuNai> complaintOpt = khieuNaiRepository.findById(complaintId);
+        Optional<NhanVien> managerOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+
+        if (complaintOpt.isPresent() && managerOpt.isPresent()) {
+            KhieuNai complaint = complaintOpt.get();
+            complaint.setTrangThai(status);
+            // Optional: Gán nhân viên xử lý cho khiếu nại
+            // complaint.setNhanVienXuLy(managerOpt.get()); 
+            khieuNaiRepository.save(complaint);
+            redirectAttributes.addFlashAttribute("successMessage", "Cập nhật trạng thái khiếu nại #" + complaintId + " thành công!");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy khiếu nại hoặc nhân viên.");
+        }
+
+        return "redirect:/manager/complaints";
     }
 }

@@ -2,6 +2,8 @@ package com.baohanh.trungtambaohanh.service;
 
 import com.baohanh.trungtambaohanh.dto.ChartDataDto;
 import com.baohanh.trungtambaohanh.dto.DoanhThuKpiDto;
+import com.baohanh.trungtambaohanh.dto.LinhKienSuDungDto;
+import com.baohanh.trungtambaohanh.dto.ThongKeSuaChuaKpiDto;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua;
 import com.baohanh.trungtambaohanh.repository.ChiTietSuaChuaRepository;
 import com.baohanh.trungtambaohanh.repository.PhieuSuaChuaRepository;
@@ -11,10 +13,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 public class BaoCaoServiceImpl implements BaoCaoService {
@@ -87,5 +92,62 @@ public class BaoCaoServiceImpl implements BaoCaoService {
             data.add((BigDecimal) result[1]);
         }
         return new ChartDataDto(labels, data);
+    }
+    
+    
+    @Override
+    public ThongKeSuaChuaKpiDto tinhToanThongKeSuaChuaKpis(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId, Integer loaiThietBiId) {
+        ThongKeSuaChuaKpiDto kpis = new ThongKeSuaChuaKpiDto();
+        List<Object[]> statusCounts = phieuSuaChuaRepository.countTicketsByStatus(startDate, endDate, ktvId, loaiThietBiId);
+        
+        long tiepNhan = 0;
+        long hoanThanh = 0;
+        for(Object[] status : statusCounts) {
+            String trangThai = (String) status[0];
+            long count = (long) status[1];
+            tiepNhan += count; // Tổng tất cả các phiếu trong kỳ
+            if ("Đã trả khách".equals(trangThai)) {
+                hoanThanh += count;
+            }
+        }
+        kpis.setTongPhieuTiepNhan(tiepNhan);
+        kpis.setTongPhieuHoanThanh(hoanThanh);
+
+        // Tính thời gian sửa trung bình
+        List<PhieuSuaChua> completedTickets = phieuSuaChuaRepository.findTicketsForAverageTime(startDate, endDate, ktvId, loaiThietBiId);
+        if (!completedTickets.isEmpty()) {
+            long totalDurationSeconds = 0;
+            for (PhieuSuaChua ticket : completedTickets) {
+                Duration duration = Duration.between(ticket.getNgayTiepNhan(), ticket.getNgayHoanThanh());
+                totalDurationSeconds += duration.getSeconds();
+            }
+            long avgSeconds = totalDurationSeconds / completedTickets.size();
+            long days = TimeUnit.SECONDS.toDays(avgSeconds);
+            long hours = TimeUnit.SECONDS.toHours(avgSeconds) % 24;
+            kpis.setThoiGianSuaTrungBinh(String.format("%d ngày %d giờ", days, hours));
+        }
+
+        return kpis;
+    }
+
+    @Override
+    public ChartDataDto getPhieuTheoTrangThaiChart(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId, Integer loaiThietBiId) {
+        List<Object[]> results = phieuSuaChuaRepository.countTicketsByStatus(startDate, endDate, ktvId, loaiThietBiId);
+        List<String> labels = results.stream().map(r -> (String) r[0]).collect(Collectors.toList());
+        List<BigDecimal> data = results.stream().map(r -> new BigDecimal((long) r[1])).collect(Collectors.toList());
+        return new ChartDataDto(labels, data);
+    }
+
+    @Override
+    public ChartDataDto getPhieuTheoKtvChart(OffsetDateTime startDate, OffsetDateTime endDate, Integer loaiThietBiId) {
+        List<Object[]> results = phieuSuaChuaRepository.countCompletedTicketsByTechnician(startDate, endDate, loaiThietBiId);
+        List<String> labels = results.stream().map(r -> (String) r[0]).collect(Collectors.toList());
+        List<BigDecimal> data = results.stream().map(r -> new BigDecimal((long) r[1])).collect(Collectors.toList());
+        return new ChartDataDto(labels, data);
+    }
+
+    @Override
+    public List<LinhKienSuDungDto> getThongKeSuDungLinhKien(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId, Integer loaiThietBiId) {
+        return chiTietSuaChuaRepository.getLinhKienUsageStats(startDate, endDate, ktvId, loaiThietBiId);
     }
 }

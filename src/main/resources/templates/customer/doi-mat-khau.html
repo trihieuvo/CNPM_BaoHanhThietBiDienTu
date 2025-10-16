@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đổi mật khẩu</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div th:replace="~{customer/fragments :: sidebar(activePage='doi-mat-khau', khachHang=${khachHang})}"></div>
+
+    <div class="main-content">
+        <div class="card" style="max-width: 700px; margin: 0 auto;">
+            <div class="header">
+                <div>
+                    <h1>Đổi mật khẩu</h1>
+                    <p class="text-muted">Cập nhật mật khẩu đăng nhập của bạn</p>
+                </div>
+            </div>
+
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <form th:action="@{/customer/doi-mat-khau}" method="post" onsubmit="return validatePassword()">
+                <div class="form-group">
+                    <label for="matKhauCu">Mật khẩu hiện tại: <span style="color: red;">*</span></label>
+                    <input type="password" 
+                           id="matKhauCu" 
+                           name="matKhauCu" 
+                           placeholder="Nhập mật khẩu hiện tại"
+                           required
+                           autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="matKhauMoi">Mật khẩu mới: <span style="color: red;">*</span></label>
+                    <input type="password" 
+                           id="matKhauMoi" 
+                           name="matKhauMoi" 
+                           placeholder="Nhập mật khẩu mới"
+                           minlength="6"
+                           required>
+                    <small class="text-muted">Tối thiểu 6 ký tự</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="xacNhanMatKhau">Xác nhận mật khẩu mới: <span style="color: red;">*</span></label>
+                    <input type="password" 
+                           id="xacNhanMatKhau" 
+                           name="xacNhanMatKhau" 
+                           placeholder="Nhập lại mật khẩu mới"
+                           minlength="6"
+                           required>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn">🔒 Đổi mật khẩu</button>
+                    <a href="/customer/dashboard" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+
+            <div class="password-requirements">
+                <strong style="color: #1e40af;">💡 Yêu cầu mật khẩu:</strong>
+                <ul>
+                    <li>Tối thiểu 6 ký tự</li>
+                    <li>Nên kết hợp chữ hoa, chữ thường và số</li>
+                    <li>Không nên sử dụng thông tin cá nhân dễ đoán</li>
+                    <li>Thay đổi mật khẩu định kỳ để bảo mật</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function validatePassword() {
+            const matKhauMoi = document.getElementById('matKhauMoi').value;
+            const xacNhanMatKhau = document.getElementById('xacNhanMatKhau').value;
+            
+            if (matKhauMoi !== xacNhanMatKhau) {
+                alert('Mật khẩu mới và xác nhận mật khẩu không khớp!');
+                return false;
+            }
+            
+            if (matKhauMoi.length < 6) {
+                alert('Mật khẩu phải có tối thiểu 6 ký tự!');
+                return false;
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html>

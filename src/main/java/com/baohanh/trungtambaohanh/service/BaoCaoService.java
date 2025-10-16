@@ -2,6 +2,8 @@ package com.baohanh.trungtambaohanh.service;
 
 import com.baohanh.trungtambaohanh.dto.ChartDataDto;
 import com.baohanh.trungtambaohanh.dto.DoanhThuKpiDto;
+import com.baohanh.trungtambaohanh.dto.LinhKienSuDungDto;
+import com.baohanh.trungtambaohanh.dto.ThongKeSuaChuaKpiDto;
 import com.baohanh.trungtambaohanh.entity.PhieuSuaChua;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -11,4 +13,9 @@ public interface BaoCaoService {
     DoanhThuKpiDto tinhToanKpis(List<PhieuSuaChua> phieuList, OffsetDateTime startDate, OffsetDateTime endDate);
     ChartDataDto getDoanhThuTheoNgayChart(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId);
     ChartDataDto getDoanhThuTheoLoaiThietBiChart(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId);
+    
+    ThongKeSuaChuaKpiDto tinhToanThongKeSuaChuaKpis(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId, Integer loaiThietBiId);
+    ChartDataDto getPhieuTheoTrangThaiChart(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId, Integer loaiThietBiId);
+    ChartDataDto getPhieuTheoKtvChart(OffsetDateTime startDate, OffsetDateTime endDate, Integer loaiThietBiId);
+    List<LinhKienSuDungDto> getThongKeSuDungLinhKien(OffsetDateTime startDate, OffsetDateTime endDate, Integer ktvId, Integer loaiThietBiId);
 }
