@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' | Hệ thống Bảo hành'"></title> 
+    <link rel="stylesheet" th:href="@{/css/style.css}"> 
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit-code.js" crossorigin="anonymous" async></script>
+</head>
+<body>
+
+    <div class="body"> 
+        <div class="sidebar">
+            <h2>Quản lý Bảo hành</h2>
+
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/dashboard}" class="active"> 
+                       <i class="fa-solid fa-gauge-high"></i> Tổng quan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/tiep-nhan}"> 
+                       <i class="fa-solid fa-receipt"></i> Tiếp nhận Bảo hành
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/tra-cuu}"> 
+                       <i class="fa-solid fa-magnifying-glass"></i> Tra cứu Sửa chữa
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/tra-thiet-bi}"> 
+                       <i class="fa-solid fa-hand-holding-dollar"></i> Trả thiết bị & Thu phí
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span sec:authentication="name"><i class="fa-solid fa-user-circle"></i> Tên Nhân viên</span> 
+                    <a th:href="@{/logout}" class="logout-link" title="Đăng xuất">
+                        <i class="fa-solid fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header">
+                <h1>Tổng quan Hoạt động</h1>
+                <p class="text-muted">Thông tin tổng hợp về tình hình bảo hành tại trung tâm.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <i class="fa-solid fa-clock icon-info"></i>
+                    <h3>Phiếu chờ sửa</h3>
+                    <p class="stat-number" th:text="${phieuChoSua}">0</p>
+                    <small>Mới tiếp nhận & Chờ xử lý</small>
+                </div>
+
+                <div class="card stat-card">
+                    <i class="fa-solid fa-screwdriver-wrench icon-warning"></i>
+                    <h3>Phiếu đang sửa</h3>
+                    <p class="stat-number" th:text="${phieuDangSua}">0</p>
+                    <small>Đang được KTV xử lý</small>
+                </div>
+
+                <div class="card stat-card">
+                    <i class="fa-solid fa-check-circle icon-success"></i>
+                    <h3>Phiếu đã xong</h3>
+                    <p class="stat-number" th:text="${phieuDaSuaXong}">0</p>
+                    <small>Chờ trả khách & Thanh toán</small>
+                </div>
+            </div>
+
+            </div>
+        </div>
+    
+</body>
+</html>

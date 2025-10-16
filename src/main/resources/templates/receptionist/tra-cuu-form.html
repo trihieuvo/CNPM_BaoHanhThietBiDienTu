@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' | Quản lý Bảo hành'">Tra cứu sửa chữa | Hệ thống QLBH</title>
+    
+    <link rel="stylesheet" th:href="@{/css/styles.css}"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    </head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>Quản lý Bảo hành</h2>
+    </div>
+    <ul class="nav-list">
+        <li class="nav-item">
+            <a th:href="@{/receptionist/dashboard}" th:classappend="${currentPath != null and currentPath == '/receptionist/dashboard'} ? 'active' : ''">
+                <i class="fa-solid fa-tachometer-alt"></i> Tổng quan
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/receptionist/tiep-nhan}" th:classappend="${currentPath != null and currentPath == '/receptionist/tiep-nhan'} ? 'active' : ''">
+                <i class="fa-solid fa-file-alt"></i> Tiếp nhận BH
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/receptionist/tra-thiet-bi}" th:classappend="${currentPath != null and currentPath == '/receptionist/tra-thiet-bi'} ? 'active' : ''">
+                <i class="fa-solid fa-shipping-fast"></i> Trả thiết bị
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/receptionist/tra-cuu}" th:classappend="${currentPath != null and currentPath.startsWith('/receptionist/tra-cuu')} ? 'active' : ''">
+                <i class="fa-solid fa-search"></i> Tra cứu
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <span><i class="fa-solid fa-user-circle"></i> Nhân viên: NV001</span>
+            <a th:href="@{/logout}" class="logout-link" title="Đăng xuất"><i class="fa-solid fa-sign-out-alt"></i></a>
+        </div>
+    </div>
+</div>
+
+
+<div class="app-container">
+    <div class="main-content">
+
+        <div class="header">
+            <div>
+                <h1>Tra cứu thông tin sửa chữa</h1>
+                <p class="text-muted">Nhập mã phiếu, SĐT hoặc tên khách hàng để tìm kiếm.</p>
+            </div>
+        </div>
+        
+        <div th:if="${param.error}" class="alert alert-danger">
+            <span th:text="${param.error[0] == 'notfound' ? 'Không tìm thấy mã phiếu sửa chữa này!' : 'Đã có lỗi xảy ra.'}"></span>
+        </div>
+
+        <div class="card mb-4">
+            <form th:action="@{/receptionist/tra-cuu}" method="get" class="search-and-filter-box">
+                
+                <input type="text" name="query" class="form-control" 
+                       placeholder="Nhập Mã phiếu, SĐT hoặc Tên Khách hàng..." 
+                       th:value="${query}" autofocus>
+                
+                <select name="trangThai" class="form-select filter-dropdown">
+                    <option value="">-- Lọc theo Trạng thái --</option>
+                    <option th:each="trangThaiOption : ${trangThaiList}" 
+                            th:value="${trangThaiOption}" 
+                            th:text="${trangThaiOption}" 
+                            th:selected="${trangThaiOption == trangThaiSelected}">
+                        Trạng Thái
+                    </option>
+                </select>
+                
+                <button type="submit" class="btn"><i class="fa-solid fa-search"></i> Tìm kiếm</button>
+                
+                <a th:href="@{/receptionist/tra-cuu}" class="btn btn-outline ml-2" title="Đặt lại bộ lọc"><i class="fa-solid fa-sync-alt"></i></a>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h3>Kết quả tra cứu</h3>
+            
+            <div th:if="${(query == null or query.isEmpty()) and (trangThaiSelected == null or trangThaiSelected.isEmpty())}" 
+                 class="empty-state">
+                 <div><i class="fa-solid fa-magnifying-glass"></i></div>
+                 <h4>Bắt đầu Tra cứu</h4>
+                 <p>Vui lòng nhập thông tin vào ô tìm kiếm hoặc chọn trạng thái lọc phía trên.</p>
+            </div>
+            
+            <div th:if="${(query != null or trangThaiSelected != null) and results.isEmpty()}" 
+                 class="empty-state">
+                <div><i class="fa-solid fa-box-open"></i></div>
+                 <h4>Không tìm thấy kết quả</h4>
+                 <p>Không có phiếu sửa chữa nào phù hợp với tiêu chí tra cứu của bạn.</p>
+            </div>
+
+            <div th:if="${!results.isEmpty()}">
+                <p class="text-muted mb-3">Tìm thấy <strong th:text="${#lists.size(results)}"></strong> kết quả phù hợp.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Phiếu</th>
+                            <th>Khách Hàng</th>
+                            <th>Số Điện Thoại</th>
+                            <th>Thiết Bị</th>
+                            <th>Trạng Thái</th>
+                            <th>Ngày Tiếp Nhận</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="phieu : ${results}">
+                            <td><strong th:text="'#' + ${phieu.maPhieu}"></strong></td>
+                            <td th:text="${phieu.khachHang.hoTen}"></td>
+                            <td th:text="${phieu.khachHang.soDienThoai}"></td>
+                            <td th:text="${phieu.thietBi.hangSanXuat + ' ' + phieu.thietBi.model}"></td>
+                            <td>
+                                <span class="badge badge-info" th:text="${phieu.trangThai}">Trạng Thái</span>
+                            </td>
+                            <td th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd/MM/yyyy HH:mm')}"></td>
+                            <td><a th:href="@{/receptionist/tra-cuu/{id}(id=${phieu.maPhieu})}" class="btn btn-outline btn-sm">Xem chi tiết</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

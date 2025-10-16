@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' | Hệ thống Bảo hành'"></title> 
+    <link rel="stylesheet" th:href="@{/css/style.css}"> 
+    <script src="https://kit.fontawesome.com/your-font-awesome-kit-code.js" crossorigin="anonymous" async></script>
+</head>
+<body>
+
+    <div class="body"> 
+        <div class="sidebar">
+            <h2>Quản lý Bảo hành</h2>
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/dashboard}"> 
+                       <i class="fa-solid fa-gauge-high"></i> Tổng quan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/tiep-nhan}"> 
+                       <i class="fa-solid fa-receipt"></i> Tiếp nhận Bảo hành
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/tra-cuu}" class="active"> 
+                       <i class="fa-solid fa-magnifying-glass"></i> Tra cứu Sửa chữa
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/receptionist/tra-thiet-bi}"> 
+                       <i class="fa-solid fa-hand-holding-dollar"></i> Trả thiết bị & Thu phí
+                    </a>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span sec:authentication="name"><i class="fa-solid fa-user-circle"></i> Tên Nhân viên</span> 
+                    <a th:href="@{/logout}" class="logout-link" title="Đăng xuất">
+                        <i class="fa-solid fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="main-content">
+            <div class="header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 th:text="${pageTitle}">Chi tiết Phiếu #...</h1>
+                    <p class="text-muted">Thông tin đầy đủ về phiếu sửa chữa số <strong th:text="${phieu.maPhieu}"></strong>.</p>
+                </div>
+                <a th:href="@{/receptionist/tra-cuu}" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Trở về Tra cứu
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <h2>Thông tin Khách hàng</h2>
+                        <div class="detail-group">
+                            <strong>Mã Khách Hàng:</strong> <span th:text="${phieu.khachHang.maKhachHang}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Họ Tên:</strong> <span th:text="${phieu.khachHang.hoTen}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>SĐT:</strong> <span th:text="${phieu.khachHang.soDienThoai}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Email:</strong> <span th:text="${phieu.khachHang.email}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Địa Chỉ:</strong> <span th:text="${phieu.khachHang.diaChi}"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                         <h2>Thông tin Thiết bị</h2>
+                         <div class="detail-group">
+                            <strong>Hãng SX:</strong> <span th:text="${phieu.thietBi.hangSanXuat}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Model:</strong> <span th:text="${phieu.thietBi.model}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Serial:</strong> <span th:text="${phieu.thietBi.soSerial}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Tình trạng ban đầu:</strong> <span th:text="${phieu.moTaHienTrang}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Phụ kiện kèm theo:</strong> <span th:text="${phieu.phuKienKemTheo ?: 'Không có'}"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <h2>Thông tin Phiếu Sửa Chữa</h2>
+                        <div class="detail-group">
+                            <strong>Mã Phiếu:</strong> <span th:text="${phieu.maPhieu}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Trạng Thái:</strong> <span class="badge badge-lg" th:classappend="${phieu.trangThai == 'Đã trả khách' ? 'badge-success' : 'badge-info'}" th:text="${phieu.trangThai}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Ngày Tiếp Nhận:</strong> <span th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd/MM/yyyy HH:mm')}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Kỹ thuật viên:</strong> <span th:text="${phieu.kyThuatVien?.hoTen ?: 'Chưa phân công'}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Ngày Báo Giá:</strong> <span th:text="${phieu.ngayBaoGia != null ? #temporals.format(phieu.ngayBaoGia, 'dd/MM/yyyy') : 'Chưa có'}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Ngày Hoàn Thành:</strong> <span th:text="${phieu.ngayHoanThanh != null ? #temporals.format(phieu.ngayHoanThanh, 'dd/MM/yyyy') : 'Chưa xong'}"></span>
+                        </div>
+                        <div class="detail-group">
+                            <strong>Ngày Trả Khách:</strong> <span th:text="${phieu.ngayTra != null ? #temporals.format(phieu.ngayTra, 'dd/MM/yyyy') : 'Chưa trả'}"></span>
+                        </div>
+                        <hr>
+                        <div class="detail-group large-text">
+                            <strong>Tổng Chi Phí:</strong> 
+                            <span class="text-danger font-weight-bold" 
+                                  th:text="${phieu.tongChiPhi != null ? #numbers.formatCurrency(phieu.tongChiPhi) : 'Chưa báo giá'}">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
