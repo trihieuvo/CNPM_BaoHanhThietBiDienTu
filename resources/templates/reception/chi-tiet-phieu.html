@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="content" th:object="${phieu}">
+    <div class="header">
+        <div>
+            <h1 th:text="'Chi tiết phiếu sửa chữa #' + *{maPhieu}">Chi tiết phiếu sửa chữa #123</h1>
+            <p class="text-muted">
+                Ngày tiếp nhận: <strong th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd/MM/yyyy HH:mm')}"></strong>
+            </p>
+        </div>
+        <div class="button-group">
+            <a href="#" class="btn"><i class="fa-solid fa-print"></i> In phiếu</a>
+            <a th:href="@{/receptionist/tra-cuu}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Quay lại tra cứu</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;" class="mb-4">
+            <div>
+                <h3 class="mb-3"><i class="fa-solid fa-user"></i> Thông tin khách hàng</h3>
+                <div class="info-section">
+                    <div class="info-row"><span class="info-label">Họ tên:</span> <span class="info-value" th:text="*{khachHang.hoTen}"></span></div>
+                    <div class="info-row"><span class="info-label">Số điện thoại:</span> <span class="info-value" th:text="*{khachHang.soDienThoai}"></span></div>
+                    <div class="info-row"><span class="info-label">Email:</span> <span class="info-value" th:text="*{khachHang.email ?: 'N/A'}"></span></div>
+                    <div class="info-row"><span class="info-label">Địa chỉ:</span> <span class="info-value" th:text="*{khachHang.diaChi ?: 'N/A'}"></span></div>
+                </div>
+            </div>
+            <div>
+                <h3 class="mb-3"><i class="fa-solid fa-laptop"></i> Thông tin thiết bị</h3>
+                 <div class="info-section">
+                    <div class="info-row"><span class="info-label">Hãng:</span> <span class="info-value" th:text="*{thietBi.hangSanXuat ?: 'N/A'}"></span></div>
+                    <div class="info-row"><span class="info-label">Model:</span> <span class="info-value" th:text="*{thietBi.model}"></span></div>
+                    <div class="info-row"><span class="info-label">Số Serial:</span> <span class="info-value" th:text="*{thietBi.soSerial ?: 'N/A'}"></span></div>
+                 </div>
+            </div>
+        </div>
+        
+        <hr class="my-4">
+
+        <h3 class="mb-3"><i class="fa-solid fa-timeline"></i> Lịch sử & Trạng thái</h3>
+        <div class="note-box">
+            <strong>Tình trạng tiếp nhận ban đầu:</strong>
+            <p th:text="*{tinhTrangTiepNhan}"></p>
+        </div>
+        <div class="info-section">
+             <div class="info-row">
+                 <span class="info-label">Trạng thái hiện tại:</span>
+                 <span class="info-value"><span class="badge badge-success" th:text="*{trangThai}">Đã sửa xong</span></span>
+             </div>
+             <div class="info-row">
+                 <span class="info-label">Kỹ thuật viên phụ trách:</span>
+                 <span class="info-value" th:text="*{kyThuatVien != null ? kyThuatVien.hoTen : 'Chưa chỉ định'}"></span>
+             </div>
+             <div class="info-row">
+                 <span class="info-label">Ngày hẹn trả:</span>
+                 <span class="info-value" th:text="*{ngayTraDuKien != null ? #temporals.format(ngayTraDuKien, 'dd/MM/yyyy') : 'Chưa có'}"></span>
+             </div>
+             <div class="info-row">
+                 <span class="info-label">Ngày hoàn thành:</span>
+                 <span class="info-value" th:text="*{ngayHoanThanh != null ? #temporals.format(ngayHoanThanh, 'dd/MM/yyyy') : 'Chưa hoàn thành'}"></span>
+             </div>
+        </div>
+
+        <hr class="my-4">
+
+        <h3 class="mb-3"><i class="fa-solid fa-wrench"></i> Chi tiết sửa chữa & Chi phí</h3>
+        <div th:if="*{chiTietSuaChuaList.isEmpty()}" class="empty-state p-3">
+             <p class="text-muted">Chưa có chi tiết sửa chữa nào được cập nhật.</p>
+        </div>
+
+        <table th:if="!*{chiTietSuaChuaList.isEmpty()}">
+            <thead>
+                <tr>
+                    <th>Linh kiện / Dịch vụ</th>
+                    <th>Số lượng</th>
+                    <th>Đơn giá</th>
+                    <th>Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="chitiet : *{chiTietSuaChuaList}">
+                    <td th:text="${chitiet.linhKien != null ? chitiet.linhKien.tenLinhKien : chitiet.moTaCongViec}">Màn hình LCD</td>
+                    <td th:text="${chitiet.soLuong}">1</td>
+                    <td th:text="${#numbers.formatCurrency(chitiet.donGia)}">2,500,000đ</td>
+                    <td th:text="${#numbers.formatCurrency(chitiet.thanhTien)}">2,500,000đ</td>
+                </tr>
+            </tbody>
+             <tfoot>
+                <tr>
+                    <td colspan="3" style="text-align: right;"><strong>Tổng chi phí:</strong></td>
+                    <td th:text="*{tongChiPhi != null ? #numbers.formatCurrency(tongChiPhi) : '0đ'}"><strong>2,500,000đ</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

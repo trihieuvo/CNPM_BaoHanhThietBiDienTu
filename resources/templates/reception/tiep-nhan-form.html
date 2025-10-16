@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="content">
+
+    <div class="header">
+        <div>
+            <h1>Lập phiếu tiếp nhận bảo hành</h1>
+            <p class="text-muted">Tìm kiếm khách hàng bằng SĐT hoặc tạo mới.</p>
+        </div>
+    </div>
+
+    <form th:action="@{/receptionist/tiep-nhan}" method="post" class="card">
+        <input type="hidden" id="khachHangId" name="khachHangId" value="0">
+
+        <div class="mb-4">
+            <h3><i class="fa-solid fa-user-magnifying-glass"></i> Tìm kiếm & Thông tin khách hàng</h3>
+            <div class="form-group">
+                <label for="search-sdt">Tìm kiếm theo Số Điện Thoại</label>
+                <input type="tel" id="search-sdt" class="form-control" placeholder="Nhập SĐT để tìm khách hàng cũ...">
+                <div id="search-results" class="mt-1"></div>
+            </div>
+            <hr class="my-3">
+            <div class="form-group">
+                <label for="hoTen">Họ và tên</label>
+                <input type="text" id="hoTen" name="hoTen" class="form-control" placeholder="Nguyễn Văn A" required>
+            </div>
+            <div class="form-group">
+                <label for="soDienThoai">Số điện thoại</label>
+                <input type="tel" id="soDienThoai" name="soDienThoai" class="form-control" placeholder="09xxxxxxxx" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control" placeholder="example@gmail.com">
+            </div>
+            <div class="form-group">
+                <label for="diaChi">Địa chỉ</label>
+                <input type="text" id="diaChi" name="diaChi" class="form-control" placeholder="Địa chỉ chi tiết">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h3><i class="fa-solid fa-laptop"></i> Thông tin thiết bị</h3>
+            <div class="form-group">
+                <label for="hangSanXuat">Hãng sản xuất</label>
+                <input type="text" id="hangSanXuat" name="thietBi.hangSanXuat" class="form-control" placeholder="Dell, Apple, Samsung...">
+            </div>
+            <div class="form-group">
+                <label for="model">Model thiết bị</label>
+                <input type="text" id="model" name="thietBi.model" class="form-control" placeholder="Inspiron 15, Macbook Pro M3..." required>
+            </div>
+            <div class="form-group">
+                <label for="soSerial">Số Serial</label>
+                <input type="text" id="soSerial" name="thietBi.soSerial" class="form-control" placeholder="Nhập số serial của thiết bị">
+            </div>
+        </div>
+
+        <div>
+            <h3><i class="fa-solid fa-file-alt"></i> Tình trạng & Ghi chú</h3>
+            <div class="form-group">
+                <label for="tinhTrangTiepNhan">Mô tả tình trạng hư hỏng</label>
+                <textarea id="tinhTrangTiepNhan" name="tinhTrangTiepNhan" rows="4" class="form-control" placeholder="Vd: Máy không lên nguồn, màn hình bị sọc..." required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="ngayTraDuKien">Ngày trả dự kiến</label>
+                <input type="date" id="ngayTraDuKien" name="ngayTraDuKien" class="form-control">
+            </div>
+        </div>
+
+        <div class="button-group mt-3">
+            <button type="submit" class="btn">
+                <i class="fa-solid fa-save"></i> Lưu và tạo phiếu
+            </button>
+            <a th:href="@{/receptionist/dashboard}" class="btn btn-secondary">
+                <i class="fa-solid fa-times"></i> Hủy bỏ
+            </a>
+        </div>
+    </form>
+    
+    <script th:src="@{/js/tiep-nhan.js}"></script>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="content">
+    <div class="header">
+        <div>
+            <h1>Danh sách chờ trả thiết bị</h1>
+            <p class="text-muted">Các thiết bị đã sửa xong và sẵn sàng để giao cho khách hàng.</p>
+        </div>
+    </div>
+
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+
+    <div class="card">
+        <div th:if="${phieuList.isEmpty()}" class="empty-state">
+            <div><i class="fa-solid fa-check-circle"></i></div>
+            <h4>Không có thiết bị nào cần trả</h4>
+            <p>Tất cả các thiết bị đã sửa xong đều đã được giao cho khách hàng.</p>
+        </div>
+
+        <table th:if="${!phieuList.isEmpty()}">
+            <thead>
+                <tr>
+                    <th>Mã Phiếu</th>
+                    <th>Khách Hàng</th>
+                    <th>Thiết Bị</th>
+                    <th style="text-align: right;">Tổng Chi Phí</th>
+                    <th style="text-align: center;">Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="phieu : ${phieuList}">
+                    <td><strong th:text="'#' + ${phieu.maPhieu}">#124</strong></td>
+                    <td th:text="${phieu.khachHang.hoTen}">Trần B</td>
+                    <td th:text="${phieu.thietBi.hangSanXuat + ' ' + phieu.thietBi.model}">Apple Macbook</td>
+                    <td style="text-align: right; font-weight: bold; color: var(--danger-color);"
+                        th:text="${phieu.tongChiPhi != null ? #numbers.formatCurrency(phieu.tongChiPhi) : '0đ'}">
+                        1.500.000đ
+                    </td>
+                    <td style="text-align: center;">
+                        <form th:action="@{/receptionist/tra-thiet-bi/{id}/thanh-toan(id=${phieu.maPhieu})}" method="post" onsubmit="return confirm('Xác nhận đã thanh toán và trả thiết bị này?');">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fa-solid fa-hand-holding-dollar"></i>
+                                Trả & Thanh toán
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>	
