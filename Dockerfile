@@ -1,5 +1,6 @@
-# STAGE 1: Build a project with Maven
-FROM maven:3.8-openjdk-21 AS build
+# STAGE 1: Build the project with Maven
+# SỬA LỖI: Sử dụng một image name chính xác, kết hợp Maven 3.9.6 và Java 21 (Temurin)
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Set the working directory
 WORKDIR /app
