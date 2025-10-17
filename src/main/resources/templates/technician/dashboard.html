@@ -108,20 +108,21 @@
                                       th:text="${phieu.trangThai}">
                                 </span>
                             </td>
-                            <td class="action-cell">
-                                <a th:href="@{/technician/cong-viec/{id}(id=${phieu.maPhieu})}" class="link">Xem chi tiết</a>
-                                <th:block th:with="completedStatuses=${#lists.toList({'Đã sửa xong', 'Hoàn thành', 'Đã trả khách'})}">
-                                    <div th:if="${#lists.contains(completedStatuses, phieu.trangThai)}">
-                                        <form th:action="@{/technician/cong-viec/delete/{id}(id=${phieu.maPhieu})}" method="post">
-                                            <button type="submit" class="delete-btn-link"
-                                                    th:onclick="'return confirm(\'Bạn có chắc chắn muốn xóa phiếu #' + ${phieu.maPhieu} + '? Hành động này không thể hoàn tác.\');'">
-                                                Xóa
-                                            </button>
-                                        </form>
-                                    </div>
-                                </th:block>
-                            </td>
-                        </tr>
+							<td class="action-buttons"><a
+								th:href="@{/technician/cong-viec/{id}(id=${phieu.maPhieu})}"
+								class="link">Xem chi tiết</a> <th:block
+									th:with="completedStatuses=${#lists.toList({'Đã sửa xong', 'Hoàn thành', 'Đã trả khách'})}">
+									<form
+										th:if="${#lists.contains(completedStatuses, phieu.trangThai)}"
+										th:action="@{/technician/cong-viec/delete/{id}(id=${phieu.maPhieu})}"
+										method="post" style="display: inline; margin: 0;">
+
+										<button type="submit" class="delete-btn-link"
+											th:onclick="'return confirm(\'Bạn có chắc chắn muốn xóa phiếu #' + ${phieu.maPhieu} + '? Hành động này không thể hoàn tác.\');'">
+											Xóa</button>
+									</form>
+								</th:block></td>
+						</tr>
                     </tbody>
                 </table>
                 
