@@ -27,7 +27,7 @@ import java.util.Arrays;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import org.springframework.data.domain.Sort;
 @Controller
 @RequestMapping("/technician")
 public class TechnicianController {
@@ -50,30 +50,39 @@ public class TechnicianController {
 
 	@GetMapping("/dashboard")
 	public String showDashboard(Model model, Principal principal,
-								@RequestParam(name = "page", defaultValue = "0") int page,
-								@RequestParam(name = "size", defaultValue = "6") int size,
-								@RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
-								HttpServletRequest request) {
-		Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
-		if (technicianOpt.isPresent()) {
-			PageRequest pageable = PageRequest.of(page, size);
-			Page<PhieuSuaChua> congViecPage;
+	                            @RequestParam(name = "page", defaultValue = "0") int page,
+	                            @RequestParam(name = "size", defaultValue = "6") int size,
+	                            @RequestParam(name = "keyword", required = false, defaultValue = "") String keyword,
+	                            @RequestParam(name = "sortField", defaultValue = "ngayTiepNhan") String sortField,
+	                            @RequestParam(name = "sortDir", defaultValue = "desc") String sortDir,
+	                            HttpServletRequest request) {
+	    Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+	    if (technicianOpt.isPresent()) {
+	        // Tạo đối tượng Sort dựa trên tham số truyền vào
+	        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortField).ascending() : Sort.by(sortField).descending();
+	        PageRequest pageable = PageRequest.of(page, size, sort);
+	        Page<PhieuSuaChua> congViecPage;
 
-			if (keyword == null || keyword.isEmpty()) {
-				congViecPage = phieuSuaChuaRepository.findByKyThuatVien_MaNV(technicianOpt.get().getMaNV(), pageable);
-			} else {
-				congViecPage = phieuSuaChuaRepository.searchByKeywordForTechnician(technicianOpt.get().getMaNV(), keyword.toLowerCase(), pageable);
-			}
+	        if (keyword == null || keyword.isEmpty()) {
+	            congViecPage = phieuSuaChuaRepository.findByKyThuatVien_MaNV(technicianOpt.get().getMaNV(), pageable);
+	        } else {
+	            congViecPage = phieuSuaChuaRepository.searchByKeywordForTechnician(technicianOpt.get().getMaNV(), keyword.toLowerCase(), pageable);
+	        }
 
-			model.addAttribute("congViecPage", congViecPage);
-			model.addAttribute("keyword", keyword);
+	        model.addAttribute("congViecPage", congViecPage);
+	        model.addAttribute("keyword", keyword);
+	        
+	        // Thêm các thuộc tính sắp xếp vào model để Thymeleaf sử dụng
+	        model.addAttribute("sortField", sortField);
+	        model.addAttribute("sortDir", sortDir);
+	        model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
 
-			String requestedWithHeader = request.getHeader("X-Requested-With");
-			if ("XMLHttpRequest".equals(requestedWithHeader)) {
-				return "technician/dashboard :: results-fragment";
-			}
-		}
-		return "technician/dashboard";
+	        String requestedWithHeader = request.getHeader("X-Requested-With");
+	        if ("XMLHttpRequest".equals(requestedWithHeader)) {
+	            return "technician/dashboard :: results-fragment";
+	        }
+	    }
+	    return "technician/dashboard";
 	}
 
 
