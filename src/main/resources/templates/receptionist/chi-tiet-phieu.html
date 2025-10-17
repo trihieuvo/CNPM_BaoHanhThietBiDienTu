@@ -8,30 +8,40 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div th:replace="~{customer/fragments :: sidebar(activePage='lich-su', khachHang=${phieu.khachHang})}"></div>
+    <div th:replace="~{receptionist/fragments :: sidebar(activePage='dashboard')}"></div>
 
     <div class="main-content">
         <div class="card">
             <div class="header">
                 <div>
                     <h1>Chi tiết phiếu sửa chữa #<span th:text="${phieu.maPhieu}"></span></h1>
-                    <p class="text-muted">Thông tin chi tiết về phiếu sửa chữa của bạn</p>
+                    <p class="text-muted">Thông tin chi tiết về phiếu sửa chữa</p>
                 </div>
-                <a href="/customer/lich-su-bao-hanh" class="btn btn-outline">← Quay lại Lịch sử</a>
+                <a href="/receptionist/dashboard" class="btn btn-outline">← Quay lại Danh sách</a>
             </div>
 
             <div style="text-align: center; margin-bottom: 32px;">
-                <span class="badge" 
-                      th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' : 
-                                      (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' : 
+                <span class="badge"
+                      th:classappend="${phieu.trangThai == 'Đã trả khách'} ? 'badge-success' :
+                                      (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' :
                                       (${phieu.trangThai == 'Đã sửa xong'} ? 'badge-info' : 'badge-danger'))"
                       th:text="${phieu.trangThai}">
                 </span>
             </div>
 
-            <h3>📋 Thông tin chung</h3>
+            <h3><i class="fas fa-info-circle"></i> Thông tin chung</h3>
             <div class="info-section">
-                <div class="info-row">
+                 <div class="info-row">
+                    <div class="info-label">Khách hàng:</div>
+                    <div class="info-value">
+                        <strong th:text="${phieu.khachHang.hoTen}"></strong>
+                        <div class="text-muted" style="font-size: 13px;">
+                           SĐT: <span th:text="${phieu.khachHang.soDienThoai}"></span>
+                           <span th:if="${phieu.khachHang.email}"> | Email: <span th:text="${phieu.khachHang.email}"></span></span>
+                        </div>
+                    </div>
+                </div>
+                 <div class="info-row">
                     <div class="info-label">Thiết bị:</div>
                     <div class="info-value">
                         <strong th:text="${phieu.thietBi.hangSanXuat + ' ' + phieu.thietBi.model}"></strong>
@@ -52,7 +62,7 @@
                     <div class="info-label">Ngày trả dự kiến:</div>
                     <div class="info-value" th:text="${#temporals.format(phieu.ngayTraDuKien, 'dd-MM-yyyy')}"></div>
                 </div>
-                <div class="info-row" th:if="${phieu.ngayHoanThanh}">
+                 <div class="info-row" th:if="${phieu.ngayHoanThanh}">
                     <div class="info-label">Ngày hoàn thành:</div>
                     <div class="info-value" th:text="${#temporals.format(phieu.ngayHoanThanh, 'dd-MM-yyyy HH:mm')}"></div>
                 </div>
@@ -67,23 +77,21 @@
             </div>
 
             <div th:if="${phieu.ghiChuKyThuat != null && !phieu.ghiChuKyThuat.isEmpty()}">
-                <h3>🔧 Ghi chú kỹ thuật</h3>
+                <h3><i class="fas fa-wrench"></i> Ghi chú kỹ thuật</h3>
                 <div class="note-box">
                     <p th:text="${phieu.ghiChuKyThuat}"></p>
                 </div>
             </div>
 
-            <h3>🔩 Linh kiện thay thế</h3>
-            
-            <div th:if="${chiTietList.isEmpty()}" class="empty-state">
+            <h3><i class="fas fa-dollar-sign"></i> Chi phí sửa chữa</h3>
+             <div th:if="${chiTietList.isEmpty()}" class="empty-state">
                 <div>📦</div>
-                <p class="text-muted">Chưa sử dụng linh kiện nào</p>
+                <p class="text-muted">Chưa có thông tin chi phí</p>
             </div>
-
             <table th:if="${!chiTietList.isEmpty()}">
-                <thead>
+                 <thead>
                     <tr>
-                        <th>Tên linh kiện</th>
+                        <th>Tên mục</th>
                         <th style="text-align: center;">Số lượng</th>
                         <th style="text-align: right;">Đơn giá</th>
                         <th style="text-align: right;">Thành tiền</th>
@@ -93,46 +101,33 @@
                     <tr th:each="ct : ${chiTietList}">
                         <td th:text="${ct.linhKien.tenLinhKien}"></td>
                         <td style="text-align: center;" th:text="${ct.soLuong}"></td>
-                        <td style="text-align: right;" 
+                        <td style="text-align: right;"
                             th:text="${#numbers.formatDecimal(ct.donGia, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
-                        <td style="text-align: right; font-weight: bold;" 
+                        <td style="text-align: right; font-weight: bold;"
                             th:text="${#numbers.formatDecimal(ct.thanhTien, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" style="text-align: right; padding-right: 16px;">Tổng chi phí:</td>
-                        <td style="text-align: right; color: #667eea;" 
+                        <td style="text-align: right; color: var(--primary-color); font-size: 1.2em;"
                             th:text="${#numbers.formatDecimal(phieu.tongChiPhi, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></td>
                     </tr>
                 </tfoot>
             </table>
 
-            <h3>⏱️ Tiến trình xử lý</h3>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <strong>Tiếp nhận thiết bị</strong>
-                    <div class="text-muted" th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></div>
-                </div>
-                <div class="timeline-item" th:if="${phieu.kyThuatVien != null}">
-                    <strong>Đã phân công kỹ thuật viên</strong>
-                    <div class="text-muted" th:text="${phieu.kyThuatVien.hoTen}"></div>
-                </div>
-                <div class="timeline-item" th:if="${phieu.trangThai == 'Đang sửa chữa' || phieu.trangThai == 'Đã sửa xong' || phieu.trangThai == 'Đã trả khách'}">
-                    <strong>Đang sửa chữa</strong>
-                    <div class="text-muted">Kỹ thuật viên đang xử lý</div>
-                </div>
-                <div class="timeline-item" th:if="${phieu.trangThai == 'Đã sửa xong' || phieu.trangThai == 'Đã trả khách'}">
-                    <strong>Đã sửa xong</strong>
-                    <div class="text-muted" 
-                         th:if="${phieu.ngayHoanThanh}"
-                         th:text="${#temporals.format(phieu.ngayHoanThanh, 'dd-MM-yyyy HH:mm')}"></div>
-                </div>
-                <div class="timeline-item" th:if="${phieu.trangThai == 'Đã trả khách'}">
-                    <strong style="color: #10b981;">✓ Đã trả khách</strong>
-                    <div class="text-muted">Hoàn thành</div>
-                </div>
+             <div class="button-group mt-4" th:if="${phieu.trangThai == 'Đã sửa xong'}">
+                 <form th:action="@{/receptionist/tra-thiet-bi/{id}(id=${phieu.maPhieu})}" method="post"
+                       onsubmit="return confirm('Xác nhận trả thiết bị này cho khách hàng?');">
+                     <button type="submit" class="btn btn-success">
+                         <i class="fas fa-check-circle"></i> Xác nhận trả khách & Hoàn tất
+                     </button>
+                 </form>
             </div>
+             <div class="alert alert-success mt-4" th:if="${phieu.trangThai == 'Đã trả khách'}">
+                <i class="fas fa-check"></i> Đã trả thiết bị cho khách hàng.
+            </div>
+
         </div>
     </div>
 </body>

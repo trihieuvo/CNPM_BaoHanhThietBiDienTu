@@ -78,7 +78,7 @@ public class AuthController {
                 return "redirect:/technician/dashboard";
             } else if (role.equals("ROLE_Quản lý")) {
                 return "redirect:/manager/dashboard";
-            } else if (role.equals("ROLE_Nhân viên")) {
+            } else if (role.equals("ROLE_Nhân viên tiếp tân")) {
                 return "redirect:/receptionist/dashboard";
             } else if (role.equals("ROLE_Khách hàng")) {
                 return "redirect:/customer/dashboard";

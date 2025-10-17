@@ -78,24 +78,37 @@ public class TechnicianController {
 
 
 	@GetMapping("/cong-viec/{id}")
-	public String xemCongViec(@PathVariable("id") Integer id, Model model) {
-		Optional<PhieuSuaChua> phieuSuaChuaOpt = phieuSuaChuaRepository.findById(id);
-		if (phieuSuaChuaOpt.isPresent()) {
-			PhieuSuaChua phieu = phieuSuaChuaOpt.get();
-			List<ChiTietSuaChua> chiTietList = chiTietSuaChuaRepository.findByPhieuSuaChua_MaPhieu(id);
-			List<LinhKien> allLinhKien = linhKienRepository.findAll();
-			String trangThai = phieu.getTrangThai();
-			List<String> trangThaiHoanThanh = Arrays.asList("Đã sửa xong", "Hoàn thành", "Đã trả khách");
-			boolean isCompleted = trangThaiHoanThanh.contains(trangThai);
+	public String xemCongViec(@PathVariable("id") Integer id, Model model, Principal principal, RedirectAttributes redirectAttributes) {
+	    Optional<PhieuSuaChua> phieuSuaChuaOpt = phieuSuaChuaRepository.findById(id);
+	    Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
 
-			model.addAttribute("phieu", phieu);
-			model.addAttribute("chiTietList", chiTietList);
-			model.addAttribute("allLinhKien", allLinhKien);
-			model.addAttribute("isCompleted", isCompleted);
+	    if (phieuSuaChuaOpt.isPresent() && technicianOpt.isPresent()) {
+	        PhieuSuaChua phieu = phieuSuaChuaOpt.get();
+	        NhanVien technician = technicianOpt.get();
 
-			return "technician/cap-nhat-cong-viec";
-		}
-		return "redirect:/technician/dashboard";
+	        // *** THÊM ĐOẠN KIỂM TRA QUYỀN SỞ HỮU ***
+	        if (phieu.getKyThuatVien() == null || !phieu.getKyThuatVien().getMaNV().equals(technician.getMaNV())) {
+	            redirectAttributes.addFlashAttribute("errorMessage", "Bạn không có quyền truy cập phiếu sửa chữa này.");
+	            return "redirect:/technician/dashboard";
+	        }
+	        // *****************************************
+
+	        List<ChiTietSuaChua> chiTietList = chiTietSuaChuaRepository.findByPhieuSuaChua_MaPhieu(id);
+	        List<LinhKien> allLinhKien = linhKienRepository.findAll();
+	        String trangThai = phieu.getTrangThai();
+	        List<String> trangThaiHoanThanh = Arrays.asList("Đã sửa xong", "Hoàn thành", "Đã trả khách");
+	        boolean isCompleted = trangThaiHoanThanh.contains(trangThai);
+
+	        model.addAttribute("phieu", phieu);
+	        model.addAttribute("chiTietList", chiTietList);
+	        model.addAttribute("allLinhKien", allLinhKien);
+	        model.addAttribute("isCompleted", isCompleted);
+
+	        return "technician/cap-nhat-cong-viec";
+	    }
+
+	    redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy phiếu sửa chữa.");
+	    return "redirect:/technician/dashboard";
 	}
 
 	@PostMapping("/cong-viec/delete/{id}")

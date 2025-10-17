@@ -46,7 +46,7 @@ public class SecurityConfig {
                 // Phân quyền theo vai trò (role)
                 .requestMatchers(new AntPathRequestMatcher("/manager/**")).hasRole("Quản lý")
                 .requestMatchers(new AntPathRequestMatcher("/technician/**")).hasRole("Kỹ thuật viên")
-                .requestMatchers(new AntPathRequestMatcher("/receptionist/**")).hasRole("Nhân viên")
+                .requestMatchers(new AntPathRequestMatcher("/receptionist/**")).hasRole("Nhân viên tiếp tân")
                 .requestMatchers(new AntPathRequestMatcher("/customer/**")).hasRole("Khách hàng")
                 
                 // Tất cả các request khác đều cần phải xác thực
