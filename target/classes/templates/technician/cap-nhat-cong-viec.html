@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết công việc</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container .select2-selection--single { height: 45px; padding: 8px; border: 1.5px solid #e2e8f0; border-radius: 8px; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 43px; }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #667eea; }
+        .section-divider { margin: 32px 0; border-bottom: 2px solid #e2e8f0; }
+        .parts-section { background: #f8fafc; padding: 24px; border-radius: 8px; margin-bottom: 24px; }
+        .parts-table { width: 100%; margin-top: 16px; background: white; border-radius: 8px; overflow: hidden; }
+        .parts-table th { background: #667eea; color: white; padding: 12px; text-align: left; }
+        .parts-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .add-part-form { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 12px; align-items: end; margin-top: 16px; }
+        .total-cost { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-top: 16px; text-align: right; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .notification { padding: 12px; border-radius: 6px; margin-bottom: 16px; display: none; }
+        .notification.success { background-color: #d1fae5; color: #065f46; }
+        .notification.error { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>Chi tiết Phiếu sửa chữa: <span th:text="${phieu.maPhieu}"></span></h1>
+                <a th:href="@{/technician/dashboard}" class="btn btn-outline">← Quay lại danh sách</a>
+            </div>
+
+            <div th:if="${isCompleted}" class="alert alert-info">
+                Phiếu này đã được xử lý xong hoặc không thể sửa chữa và chỉ có thể xem.
+            </div>
+            <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px; color: #1e293b;">Thông tin chung</h3>
+                <div style="display: grid; gap: 12px;">
+                    <p><strong>Khách hàng:</strong> <span th:text="${phieu.khachHang.hoTen}"></span></p>
+                    <p><strong>Thiết bị:</strong> <span th:text="${phieu.thietBi.hangSanXuat + ' ' + phieu.thietBi.model}"></span></p>
+                    <p><strong>Tình trạng tiếp nhận:</strong> <span th:text="${phieu.tinhTrangTiepNhan}"></span></p>
+                    <p><strong>Ngày tiếp nhận:</strong> <span th:text="${#temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy HH:mm')}"></span></p>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="parts-section">
+                <h3 style="margin-bottom: 16px; color: #1e293b;">🔧 Chi phí sửa chữa</h3>
+                <div id="notification-area" class="notification"></div>
+                
+                <div id="parts-list-container">
+                    <div th:if="${chiTietList == null or chiTietList.isEmpty()}" id="empty-parts-state" class="empty-state">
+                        <div style="font-size: 48px; margin-bottom: 12px;">📦</div>
+                        <p>Chưa có chi phí nào được thêm</p>
+                    </div>
+                    <table class="parts-table" id="parts-table" th:style="${chiTietList == null or chiTietList.isEmpty()} ? 'display:none;' : ''">
+                        <thead>
+                            <tr>
+                                <th>Tên mục</th>
+                                <th>Số lượng</th>
+                                <th>Đơn giá</th>
+                                <th>Thành tiền</th>
+                                <th th:if="${!isCompleted}">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="parts-table-body">
+                            <tr th:each="ct : ${chiTietList}" th:id="'chi-tiet-' + ${ct.maChiTiet}">
+                                <td><strong th:text="${ct.linhKien.tenLinhKien}"></strong></td>
+                                <td th:text="${ct.soLuong}"></td>
+                                <td><span th:text="${#numbers.formatDecimal(ct.donGia, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></span></td>
+                                <td><strong th:text="${#numbers.formatDecimal(ct.thanhTien, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}"></strong></td>
+                                <td th:if="${!isCompleted}">
+                                    <form th:action="@{/technician/cong-viec/{maPhieu}/xoa-linh-kien/{maChiTiet}(maPhieu=${phieu.maPhieu}, maChiTiet=${ct.maChiTiet})}" 
+                                          method="post" style="display: inline;" onsubmit="return confirm('Bạn có chắc muốn xóa mục này?');">
+                                        <button type="submit" class="delete-btn">🗑️ Xóa</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="total-cost" id="total-cost-container" th:style="${chiTietList == null or chiTietList.isEmpty()} ? 'display:none;' : ''">
+                        <h3>Tổng chi phí:</h3>
+                        <p>
+                            <span id="tong-chi-phi" th:text="${#numbers.formatDecimal(phieu.tongChiPhi != null ? phieu.tongChiPhi : 0, 0, 'COMMA', 0, 'POINT')}">0</span>
+                            <span style="font-size: 20px;"> VNĐ</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div th:if="${!isCompleted}" style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #e2e8f0;">
+                    <h4 style="margin-bottom: 12px; color: #1e293b;">➕ Thêm Chi phí</h4>
+                    <form id="add-part-form" th:action="@{/technician/cong-viec/{maPhieu}/them-linh-kien(maPhieu=${phieu.maPhieu})}" method="post" class="add-part-form">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="maLinhKien">Chọn mục:</label>
+                            <select id="maLinhKien" name="maLinhKien" style="width: 100%;"></select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="soLuong">Số lượng:</label>
+                            <input type="number" id="soLuong" name="soLuong" min="1" value="1" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Đơn giá:</label>
+                            <span id="donGiaHienThi" style="font-weight: bold; color: #667eea; font-size: 1.1em; display: block; padding-top: 10px;"></span>
+                        </div>
+                        <button type="submit" class="btn" style="height: fit-content;">➕ Thêm</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <h3 style="margin-bottom: 16px;">Cập nhật tiến độ</h3>
+            <form th:action="@{/technician/cong-viec/update}" method="post">
+                <input type="hidden" name="maPhieu" th:value="${phieu.maPhieu}">
+                <div class="form-group">
+                    <label for="trangThai">Trạng thái:</label>
+                    <select id="trangThai" name="trangThai" required th:disabled="${isCompleted}">
+                        <option value="Đang chẩn đoán" th:selected="${phieu.trangThai == 'Đang chẩn đoán'}">Đang chẩn đoán</option>
+                        <option value="Chờ linh kiện" th:selected="${phieu.trangThai == 'Chờ linh kiện'}">Chờ linh kiện</option>
+                        <option value="Đang sửa chữa" th:selected="${phieu.trangThai == 'Đang sửa chữa'}">Đang sửa chữa</option>
+                        <option value="Đã sửa xong" th:selected="${phieu.trangThai == 'Đã sửa xong'}">Đã sửa xong</option>
+                        <option value="Hoàn thành" th:selected="${phieu.trangThai == 'Hoàn thành'}">Hoàn thành</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ghiChuKyThuat">Ghi chú kỹ thuật:</label>
+                    <textarea id="ghiChuKyThuat" name="ghiChuKyThuat" rows="6" th:readonly="${isCompleted}" th:text="${phieu.ghiChuKyThuat}" placeholder="Ghi rõ lý do không thể sửa chữa vào đây..."></textarea>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button th:if="${!isCompleted}" type="submit" class="btn">💾 Lưu cập nhật</button>
+                    <button th:if="${!isCompleted}"
+                            type="submit"
+                            class="btn"
+                            style="background-color: var(--danger-color);"
+                            th:formaction="@{/technician/cong-viec/mark-unrepairable}"
+                            onclick="return confirm('Bạn có chắc chắn muốn đánh dấu phiếu này là KHÔNG THỂ SỬA CHỮA và trả về không?');">
+                        ❌ Không thể sửa
+                    </button>
+                    <a th:href="@{/technician/dashboard}" class="btn btn-secondary">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    $(document).ready(function() {
+        $('#maLinhKien').select2({
+            placeholder: 'Tìm kiếm linh kiện hoặc công sửa chữa...',
+            ajax: {
+                url: '/api/linh-kien',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { term: params.term, page: params.page || 1 };
+                },
+                processResults: function (data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: $.map(data.results, function (item) {
+                            return { id: item.id, text: item.text, data_price: item.data_price }
+                        }),
+                        pagination: { more: data.pagination.more }
+                    };
+                },
+                cache: true
+            }
+        });
+
+        $('#maLinhKien').on('select2:select', function (e) {
+            var data = e.params.data;
+            if (data.data_price) {
+                $('#donGiaHienThi').text(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(data.data_price));
+            }
+        });
+
+        $('#add-part-form').on('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const url = $(this).attr('action');
+            fetch(url, { method: 'POST', body: formData })
+            .then(response => {
+                if (!response.ok) { return response.json().then(err => { throw err; }); }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload(); 
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi không mong muốn: ' + error.message);
+            });
+        });
+    });
+    /*]]>*/
+    </script>
+</body>
+</html>

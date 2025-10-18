@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng nhập - Trung tâm Bảo hành</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+body {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-container {
+	width: 100%;
+	max-width: 440px;
+	padding: 20px;
+}
+
+.login-card {
+	background: white;
+	border-radius: 16px;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px
+		rgba(0, 0, 0, 0.04);
+	padding: 48px 40px;
+}
+
+.logo-section {
+	text-align: center;
+	margin-bottom: 32px;
+}
+
+.logo-icon {
+	width: 64px;
+	height: 64px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: 16px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 16px;
+	font-size: 32px;
+	color: white;
+}
+
+.logo-section h2 {
+	font-size: 26px;
+	margin-bottom: 8px;
+	color: #1e293b;
+}
+
+.logo-section p {
+	color: #64748b;
+	font-size: 14px;
+}
+</style>
+</head>
+<body>
+	<div class="login-container">
+		<div class="login-card">
+			<div class="logo-section">
+				<div class="logo-icon">🔧</div>
+				<h2>Đăng nhập hệ thống</h2>
+				<p>Trung tâm Bảo hành</p>
+			</div>
+
+			<div th:if="${param.error}" class="alert alert-danger">
+				<span
+					th:text="${errorMessage} ?: 'Tên đăng nhập hoặc mật khẩu không đúng!'"></span>
+			</div>
+
+			<div th:if="${param.logout}" class="alert alert-success">Đăng
+				xuất thành công!</div>
+
+			<div th:if="${param.register_success}" class="alert alert-success">
+				Đăng ký thành công! Vui lòng đăng nhập.</div>
+
+			<div th:if="${param.access_denied}" class="alert alert-danger">
+				Bạn không có quyền truy cập trang này. Vui lòng đăng nhập bằng tài
+				khoản có thẩm quyền.</div>
+
+			<form th:action="@{/login}" method="post">
+				<div class="form-group">
+					<label for="username">Tên đăng nhập:</label> <input type="text"
+						id="username" name="username" placeholder="Nhập tên đăng nhập"
+						required autofocus>
+				</div>
+
+				<div class="form-group">
+					<label for="password">Mật khẩu:</label> <input type="password"
+						id="password" name="password" placeholder="Nhập mật khẩu" required>
+				</div>
+
+				<button type="submit" class="btn-full">Đăng nhập</button>
+				<p class="text-center mt-2">
+					<a href="/forgot-password" class="link">Quên mật khẩu?</a>
+				</p>
+
+			</form>
+
+			<p class="text-center text-muted mt-3">
+				Chưa có tài khoản? <a href="/register" class="link">Đăng ký tại
+					đây</a>
+			</p>
+		</div>
+	</div>
+</body>
+</html>

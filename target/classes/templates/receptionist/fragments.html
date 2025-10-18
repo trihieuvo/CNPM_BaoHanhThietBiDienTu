@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+    <div class="sidebar" th:fragment="sidebar(activePage)">
+        <h2>Quầy Tiếp Tân</h2>
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a th:href="@{/receptionist/dashboard}" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">
+                    <i class="fas fa-tachometer-alt"></i> Bảng điều khiển
+                </a>
+            </li>
+            <li class="nav-item">
+                <a th:href="@{/receptionist/tiep-nhan}" th:classappend="${activePage == 'tiep-nhan'} ? 'active' : ''">
+                    <i class="fas fa-plus-circle"></i> Tiếp nhận thiết bị
+                </a>
+            </li>
+             </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <span><i class="fas fa-user-circle"></i> <span th:text="${receptionistName}">Tên Nhân Viên</span></span>
+                <a th:href="@{/logout}" class="logout-link" title="Đăng xuất">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

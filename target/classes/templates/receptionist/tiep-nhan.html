@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tiếp nhận thiết bị</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .section-box {
+            background: #f8fafc;
+            padding: 24px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+        .section-box h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .form-grid {
+             display: grid;
+             grid-template-columns: 1fr 1fr;
+             gap: 20px;
+         }
+         .form-group.full-width {
+             grid-column: 1 / -1;
+         }
+         #customer-info-display { margin-top: 15px; padding: 10px; background-color: #e9ecef; border-radius: 4px; }
+         #customer-info-display p { margin-bottom: 5px; font-size: 0.9em; }
+         #customer-info-display strong { color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+    <div th:replace="~{receptionist/fragments :: sidebar(activePage='tiep-nhan')}"></div>
+
+    <div class="main-content">
+        <h1>Tiếp nhận Thiết bị Bảo hành/Sửa chữa</h1>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <form th:action="@{/receptionist/tiep-nhan/save}" th:object="${phieuSuaChua}" method="post">
+
+            <div class="section-box">
+                <h3><i class="fas fa-user"></i> Thông tin Khách hàng</h3>
+                <div class="form-group">
+                    <label for="soDienThoaiKH">Số điện thoại: <span style="color: red;">*</span></label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="tel" id="soDienThoaiKH" name="soDienThoaiKH" placeholder="Nhập SĐT để tìm hoặc thêm mới..."
+                               th:value="${soDienThoaiKH}" required style="flex-grow: 1;">
+                        <button type="button" class="btn btn-secondary" onclick="findCustomer()"> <i class="fas fa-search"></i> Tìm</button>
+                    </div>
+                </div>
+                 <div id="customer-info-display" style="display: none;">
+                    <p><strong>Tên:</strong> <span id="display-hoTenKH"></span></p>
+                    <p><strong>Địa chỉ:</strong> <span id="display-diaChiKH"></span></p>
+                    <p><strong>Email:</strong> <span id="display-emailKH"></span></p>
+                </div>
+                <div class="form-group">
+                    <label for="hoTenKH">Họ và tên: <span style="color: red;">*</span></label>
+                    <input type="text" id="hoTenKH" name="hoTenKH" th:value="${hoTenKH}" required>
+                </div>
+                 <div class="form-grid">
+                    <div class="form-group">
+                        <label for="emailKH">Email:</label>
+                        <input type="email" id="emailKH" name="emailKH" th:value="${emailKH}">
+                    </div>
+                    <div class="form-group">
+                        <label for="diaChiKH">Địa chỉ:</label>
+                        <input type="text" id="diaChiKH" name="diaChiKH" th:value="${diaChiKH}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3><i class="fas fa-laptop-medical"></i> Thông tin Thiết bị</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="maLoaiTB">Loại thiết bị: <span style="color: red;">*</span></label>
+                        <select id="maLoaiTB" name="maLoaiTB" required>
+                            <option value="">-- Chọn loại --</option>
+                            <option th:each="loaiTB : ${loaiThietBiList}"
+                                    th:value="${loaiTB.maLoaiTB}"
+                                    th:text="${loaiTB.tenLoaiTB}"
+                                    th:selected="${selectedMaLoaiTB == loaiTB.maLoaiTB}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="hangSanXuatTB">Hãng sản xuất:</label>
+                        <input type="text" id="hangSanXuatTB" name="hangSanXuatTB" th:value="${hangSanXuatTB}" placeholder="VD: Dell, Apple, Samsung...">
+                    </div>
+                </div>
+                 <div class="form-grid">
+                    <div class="form-group">
+                        <label for="modelTB">Model: <span style="color: red;">*</span></label>
+                        <input type="text" id="modelTB" name="modelTB" th:value="${modelTB}" required placeholder="VD: Inspiron 15, iPhone 13 Pro...">
+                    </div>
+                    <div class="form-group">
+                        <label for="soSerialTB">Số Serial (Nếu có):</label>
+                        <input type="text" id="soSerialTB" name="soSerialTB" th:value="${soSerialTB}" placeholder="Nhập số serial...">
+                         <small>Nhập Serial để kiểm tra lịch sử thiết bị (nếu có)</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="moTaTB">Mô tả thêm (Tùy chọn):</label>
+                     <input type="text" id="moTaTB" name="moTaTB" th:value="${moTaTB}" placeholder="VD: Màu sắc, cấu hình đặc biệt...">
+                </div>
+            </div>
+
+            <div class="section-box">
+                <h3><i class="fas fa-clipboard-list"></i> Tình trạng & Phân công</h3>
+                <div class="form-group">
+                    <label for="tinhTrangTiepNhan">Tình trạng tiếp nhận: <span style="color: red;">*</span></label>
+					<textarea id="tinhTrangTiepNhan" name="tinhTrangTiepNhan" rows="4" required placeholder="Mô tả lỗi hoặc yêu cầu của khách hàng..." th:text="${tinhTrangTiepNhanValue}"></textarea>                </div>
+                 <div class="form-grid">
+                     <div class="form-group">
+                        <label for="ngayTraDuKien">Ngày trả dự kiến (Tùy chọn):</label>
+                        <input type="date" id="ngayTraDuKien" name="ngayTraDuKien" th:value="${ngayTraDuKienValue}">
+                    </div>
+                    <div class="form-group">
+                        <label for="maKyThuatVien">Phân công Kỹ thuật viên: <span style="color: red;">*</span></label>
+                        <select id="maKyThuatVien" name="maKyThuatVien" required>
+                            <option value="">-- Chọn KTV --</option>
+                             <option th:each="ktv : ${technicians}"
+                                     th:value="${ktv.maNV}"
+                                     th:text="${ktv.hoTen}"
+                                     th:selected="${selectedKtvId == ktv.maNV}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Lưu & Tạo phiếu</button>
+                <a th:href="@{/receptionist/dashboard}" class="btn btn-secondary">Hủy bỏ</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Hàm tìm kiếm khách hàng bằng SĐT (Giữ nguyên)
+        function findCustomer() {
+            const sdt = document.getElementById('soDienThoaiKH').value;
+            const infoDisplay = document.getElementById('customer-info-display');
+            const hoTenInput = document.getElementById('hoTenKH');
+            const emailInput = document.getElementById('emailKH');
+            const diaChiInput = document.getElementById('diaChiKH');
+
+            // Reset thông tin hiển thị và input
+            infoDisplay.style.display = 'none';
+            // Không reset input nếu có giá trị từ redirectAttributes
+            if (!hoTenInput.value) hoTenInput.value = '';
+            if (!emailInput.value) emailInput.value = '';
+            if (!diaChiInput.value) diaChiInput.value = '';
+            hoTenInput.readOnly = false; // Luôn cho phép sửa
+
+            if (!sdt || sdt.length < 10) {
+                // Không alert nếu SĐT có giá trị từ redirect
+                if (!document.getElementById('soDienThoaiKH').getAttribute('th:value')) {
+                     alert('Vui lòng nhập số điện thoại hợp lệ (ít nhất 10 số).');
+                }
+                return;
+            }
+
+            fetch(`/receptionist/api/customers/find?phone=${encodeURIComponent(sdt)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                             // Chỉ thông báo nếu không có lỗi trước đó (nghĩa là người dùng mới nhập SĐT)
+                             if (!document.querySelector('.alert-danger')) {
+                                alert('Không tìm thấy khách hàng. Vui lòng nhập thông tin mới.');
+                             }
+                             hoTenInput.focus();
+                             return null;
+                        }
+                        throw new Error('Lỗi khi tìm kiếm khách hàng.');
+                    }
+                    return response.json();
+                })
+                .then(customer => {
+                    if (customer) {
+                        document.getElementById('display-hoTenKH').textContent = customer.hoTen;
+                        document.getElementById('display-diaChiKH').textContent = customer.diaChi || 'Chưa có';
+                        document.getElementById('display-emailKH').textContent = customer.email || 'Chưa có';
+                        infoDisplay.style.display = 'block';
+
+                        hoTenInput.value = customer.hoTen;
+                        emailInput.value = customer.email || '';
+                        diaChiInput.value = customer.diaChi || '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Lỗi:', error);
+                     if (!document.querySelector('.alert-danger')) { // Chỉ alert nếu chưa có lỗi hiển thị
+                        alert(error.message);
+                     }
+                });
+        }
+
+        // Tự động gọi findCustomer nếu có SĐT được truyền từ redirectAttributes khi tải trang
+        document.addEventListener('DOMContentLoaded', function() {
+            const sdtInput = document.getElementById('soDienThoaiKH');
+            if (sdtInput && sdtInput.value) {
+                findCustomer();
+            }
+        });
+    </script>
+</body>
+</html>

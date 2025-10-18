@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông tin tài khoản</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <div th:replace="~{customer/fragments :: sidebar(activePage='thong-tin', khachHang=${khachHang})}"></div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="header">
+                <div>
+                    <h1>Thông tin tài khoản</h1>
+                    <p class="text-muted">Quản lý thông tin cá nhân của bạn</p>
+                </div>
+                </div>
+
+            <div th:if="${successMessage}" class="alert alert-success">
+                <span th:text="${successMessage}"></span>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <span th:text="${errorMessage}"></span>
+            </div>
+
+            <div class="info-section">
+                <h3>👤 Thông tin cá nhân</h3>
+                <form th:action="@{/customer/cap-nhat-thong-tin}" method="post">
+                    <div class="form-group">
+                        <label for="hoTen">Họ và tên: <span style="color: red;">*</span></label>
+                        <input type="text" 
+                               id="hoTen" 
+                               name="hoTen" 
+                               th:value="${khachHang.hoTen}"
+                               placeholder="Nhập họ và tên"
+                               required
+                               autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="soDienThoai">Số điện thoại: <span style="color: red;">*</span></label>
+                        <input type="tel" 
+                               id="soDienThoai" 
+                               name="soDienThoai" 
+                               th:value="${khachHang.soDienThoai}"
+                               placeholder="Nhập số điện thoại"
+                               pattern="[0-9]{10,11}"
+                               required>
+                        <small class="text-muted">Định dạng: 10-11 chữ số</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               th:value="${khachHang.email}"
+                               placeholder="Nhập email">
+                        <small class="text-muted">Để nhận thông báo qua email</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diaChi">Địa chỉ:</label>
+                        <textarea id="diaChi" 
+                                  name="diaChi" 
+                                  rows="3"
+                                  placeholder="Nhập địa chỉ"
+                                  th:text="${khachHang.diaChi}"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button type="submit" class="btn">💾 Cập nhật thông tin</button>
+                        <a href="/customer/dashboard" class="btn btn-secondary">Hủy</a>
+                    </div>
+                </form>
+            </div>
+
+            <div class="info-section" style="margin-top: 24px;">
+                <h3>🔐 Thông tin đăng nhập</h3>
+                <div class="info-row">
+                    <div class="info-label">Tên đăng nhập:</div>
+                    <div class="info-value">
+                        <strong th:text="${khachHang.taiKhoan.tenDangNhap}"></strong>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Vai trò:</div>
+                    <div class="info-value">
+                        <span class="badge badge-info" th:text="${khachHang.taiKhoan.vaiTro.tenVaiTro}"></span>
+                    </div>
+                </div>
+                <div class="info-row" style="border-bottom: none;">
+                    <div class="info-label">Mật khẩu:</div>
+                    <div class="info-value">
+                        <a href="/customer/doi-mat-khau" class="link">Đổi mật khẩu →</a>
+                    </div>
+                </div>
+            </div>
+            
+            </div>
+    </div>
+
+</body>
+</html>

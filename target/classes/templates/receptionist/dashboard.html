@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Bảng điều khiển - Tiếp Tân</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ====[ BẮT ĐẦU SỬA LỖI LAYOUT ]==== */
+        .toolbar {
+            display: flex;
+            align-items: flex-end; /* Căn các mục theo cạnh dưới */
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .toolbar .form-group {
+            margin-bottom: 0; /* Bỏ margin dưới của form-group trong toolbar */
+        }
+        /* ====[ KẾT THÚC SỬA LỖI LAYOUT ]==== */
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color); }
+        .pagination a, .pagination span { padding: 8px 16px; border: 1px solid var(--border-color); text-decoration: none; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background-color 0.2s; }
+        .pagination a:hover { background-color: #f1f5f9; }
+        .pagination .active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); font-weight: bold; }
+        .pagination .disabled { color: #cbd5e1; pointer-events: none; background-color: #f8fafc; }
+        .action-buttons a, .action-buttons button { margin-right: 10px; }
+        .btn-return { background-color: var(--success-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-return:hover { background-color: #059669; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{receptionist/fragments :: sidebar(activePage='dashboard')}"></div>
+
+    <div class="main-content">
+        <h1>Danh sách Phiếu Sửa Chữa</h1>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+        <form id="filter-form" th:action="@{/receptionist/dashboard}" method="get" class="toolbar">
+            <div class="form-group" style="min-width: 300px;">
+                <label for="keyword-search">Tìm kiếm:</label>
+                <input id="keyword-search" type="text" name="keyword" th:value="${keyword}" placeholder="Mã phiếu, khách hàng, thiết bị...">
+            </div>
+            <div class="form-group" style="min-width: 220px;">
+                <label for="status-select">Trạng thái:</label>
+                <select id="status-select" name="status" onchange="this.form.submit()">
+                    <option value="">(Tất cả trạng thái)</option>
+                    <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
+                    <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
+                    <option value="Chờ linh kiện" th:selected="${currentStatus == 'Chờ linh kiện'}">Chờ linh kiện</option>
+                    <option value="Đã sửa xong" th:selected="${currentStatus == 'Đã sửa xong'}">Đã sửa xong</option>
+                    <option value="Trả về - không sửa được" th:selected="${currentStatus == 'Trả về - không sửa được'}">Trả về - không sửa được</option>
+                    <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
+        </form>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Mã phiếu</th>
+                    <th>Khách hàng</th>
+                    <th>Thiết bị</th>
+                    <th>KTV Phụ trách</th>
+                    <th>Ngày Tiếp Nhận</th>
+                    <th>Trạng Thái</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:if="${phieuSuaChuaPage.empty}">
+                    <td colspan="7" style="text-align: center; padding: 40px 0;">Không có phiếu sửa chữa nào.</td>
+                </tr>
+                <tr th:each="phieu : ${phieuSuaChuaPage.content}">
+                    <td><strong th:text="${phieu.maPhieu}"></strong></td>
+                    <td th:text="${phieu.khachHang?.hoTen}"></td>
+                    <td th:text="${phieu.thietBi?.model}"></td>
+                    <td th:text="${phieu.kyThuatVien?.hoTen} ?: 'Chưa gán'"></td>
+                    <td th:text="${phieu.ngayTiepNhan != null ? #temporals.format(phieu.ngayTiepNhan, 'dd-MM-yyyy') : ''}"></td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${phieu.trangThai == 'Đã trả khách' || phieu.trangThai == 'Đã sửa xong'} ? 'badge-success' :
+                                              (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' :
+                                              (${phieu.trangThai == 'Chờ linh kiện' || phieu.trangThai == 'Trả về - không sửa được'} ? 'badge-danger' : 'badge-info'))"
+                              th:text="${phieu.trangThai}">
+                        </span>
+                    </td>
+                    <td class="action-buttons">
+                        <a th:href="@{/receptionist/phieu-sua-chua/{id}(id=${phieu.maPhieu})}" class="link" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i> Xem
+                        </a>
+                        <form th:if="${phieu.trangThai == 'Đã sửa xong'}"
+                              th:action="@{/receptionist/tra-thiet-bi/{id}(id=${phieu.maPhieu})}" method="post" style="display: inline;"
+                              onsubmit="return confirm('Xác nhận trả thiết bị này cho khách hàng?');">
+                            <button type="submit" class="btn-return" title="Trả thiết bị cho khách">
+                                <i class="fas fa-check-circle"></i> Trả khách
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div th:if="${phieuSuaChuaPage.totalPages > 1}" class="pagination">
+            <a th:href="@{/receptionist/dashboard(keyword=${keyword}, status=${currentStatus}, page=0)}" th:classappend="${phieuSuaChuaPage.first} ? 'disabled' : ''">« Đầu</a>
+            <a th:href="@{/receptionist/dashboard(keyword=${keyword}, status=${currentStatus}, page=${phieuSuaChuaPage.number - 1})}" th:classappend="${phieuSuaChuaPage.first} ? 'disabled' : ''">‹ Trước</a>
+
+            <th:block th:each="i : ${#numbers.sequence(0, phieuSuaChuaPage.totalPages - 1)}">
+                <a th:if="${i >= phieuSuaChuaPage.number - 2 and i <= phieuSuaChuaPage.number + 2}"
+                   th:href="@{/receptionist/dashboard(keyword=${keyword}, status=${currentStatus}, page=${i})}"
+                   th:classappend="${i == phieuSuaChuaPage.number} ? 'active' : ''"
+                   th:text="${i + 1}"></a>
+            </th:block>
+
+            <a th:href="@{/receptionist/dashboard(keyword=${keyword}, status=${currentStatus}, page=${phieuSuaChuaPage.number + 1})}" th:classappend="${phieuSuaChuaPage.last} ? 'disabled' : ''">Sau ›</a>
+            <a th:href="@{/receptionist/dashboard(keyword=${keyword}, status=${currentStatus}, page=${phieuSuaChuaPage.totalPages - 1})}" th:classappend="${phieuSuaChuaPage.last} ? 'disabled' : ''">Cuối »</a>
+        </div>
+
+    </div>
+</body>
+</html>
