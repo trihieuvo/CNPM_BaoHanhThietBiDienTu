@@ -32,9 +32,8 @@
             </div>
 
             <div th:if="${isCompleted}" class="alert alert-info">
-                Phiếu này đã hoàn thành và chỉ có thể xem.
+                Phiếu này đã được xử lý xong hoặc không thể sửa chữa và chỉ có thể xem.
             </div>
-            
             <div style="background: #f8fafc; padding: 24px; border-radius: 8px; margin-bottom: 24px;">
                 <h3 style="margin-bottom: 16px; color: #1e293b;">Thông tin chung</h3>
                 <div style="display: grid; gap: 12px;">
@@ -127,10 +126,18 @@
                 </div>
                 <div class="form-group">
                     <label for="ghiChuKyThuat">Ghi chú kỹ thuật:</label>
-                    <textarea id="ghiChuKyThuat" name="ghiChuKyThuat" rows="6" th:readonly="${isCompleted}" th:text="${phieu.ghiChuKyThuat}"></textarea>
+                    <textarea id="ghiChuKyThuat" name="ghiChuKyThuat" rows="6" th:readonly="${isCompleted}" th:text="${phieu.ghiChuKyThuat}" placeholder="Ghi rõ lý do không thể sửa chữa vào đây..."></textarea>
                 </div>
                 <div style="display: flex; gap: 12px;">
                     <button th:if="${!isCompleted}" type="submit" class="btn">💾 Lưu cập nhật</button>
+                    <button th:if="${!isCompleted}"
+                            type="submit"
+                            class="btn"
+                            style="background-color: var(--danger-color);"
+                            th:formaction="@{/technician/cong-viec/mark-unrepairable}"
+                            onclick="return confirm('Bạn có chắc chắn muốn đánh dấu phiếu này là KHÔNG THỂ SỬA CHỮA và trả về không?');">
+                        ❌ Không thể sửa
+                    </button>
                     <a th:href="@{/technician/dashboard}" class="btn btn-secondary">Hủy</a>
                 </div>
             </form>
@@ -182,7 +189,7 @@
             })
             .then(data => {
                 if (data.status === 'success') {
-                    location.reload(); // Tải lại trang để cập nhật danh sách một cách đơn giản nhất
+                    location.reload(); 
                 } else {
                     alert('Lỗi: ' + data.message);
                 }

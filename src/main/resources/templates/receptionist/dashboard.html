@@ -6,7 +6,20 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* CSS cho Phân trang (Copy từ manager/tickets.html nếu cần) */
+        /* ====[ BẮT ĐẦU SỬA LỖI LAYOUT ]==== */
+        .toolbar {
+            display: flex;
+            align-items: flex-end; /* Căn các mục theo cạnh dưới */
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .toolbar .form-group {
+            margin-bottom: 0; /* Bỏ margin dưới của form-group trong toolbar */
+        }
+        /* ====[ KẾT THÚC SỬA LỖI LAYOUT ]==== */
+
         .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color); }
         .pagination a, .pagination span { padding: 8px 16px; border: 1px solid var(--border-color); text-decoration: none; color: var(--text-secondary); border-radius: var(--radius-sm); transition: background-color 0.2s; }
         .pagination a:hover { background-color: #f1f5f9; }
@@ -27,24 +40,23 @@
         <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
 
         <form id="filter-form" th:action="@{/receptionist/dashboard}" method="get" class="toolbar">
-            <div style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
-                <div class="form-group" style="margin-bottom: 0; min-width: 300px;">
-                    <label for="keyword-search">Tìm kiếm:</label>
-                    <input id="keyword-search" type="text" name="keyword" th:value="${keyword}" placeholder="Mã phiếu, khách hàng, thiết bị...">
-                </div>
-                <div class="form-group" style="min-width: 220px; margin-bottom: 0;">
-                    <label for="status-select">Trạng thái:</label>
-                    <select id="status-select" name="status" onchange="this.form.submit()">
-                        <option value="">(Tất cả trạng thái)</option>
-                        <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
-                        <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
-                        <option value="Chờ linh kiện" th:selected="${currentStatus == 'Chờ linh kiện'}">Chờ linh kiện</option>
-                        <option value="Đã sửa xong" th:selected="${currentStatus == 'Đã sửa xong'}">Đã sửa xong</option>
-                        <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
+            <div class="form-group" style="min-width: 300px;">
+                <label for="keyword-search">Tìm kiếm:</label>
+                <input id="keyword-search" type="text" name="keyword" th:value="${keyword}" placeholder="Mã phiếu, khách hàng, thiết bị...">
             </div>
+            <div class="form-group" style="min-width: 220px;">
+                <label for="status-select">Trạng thái:</label>
+                <select id="status-select" name="status" onchange="this.form.submit()">
+                    <option value="">(Tất cả trạng thái)</option>
+                    <option value="Mới tiếp nhận" th:selected="${currentStatus == 'Mới tiếp nhận'}">Mới tiếp nhận</option>
+                    <option value="Đang sửa chữa" th:selected="${currentStatus == 'Đang sửa chữa'}">Đang sửa chữa</option>
+                    <option value="Chờ linh kiện" th:selected="${currentStatus == 'Chờ linh kiện'}">Chờ linh kiện</option>
+                    <option value="Đã sửa xong" th:selected="${currentStatus == 'Đã sửa xong'}">Đã sửa xong</option>
+                    <option value="Trả về - không sửa được" th:selected="${currentStatus == 'Trả về - không sửa được'}">Trả về - không sửa được</option>
+                    <option value="Đã trả khách" th:selected="${currentStatus == 'Đã trả khách'}">Đã trả khách</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Lọc</button>
         </form>
 
         <table class="data-table">
@@ -73,7 +85,7 @@
                         <span class="badge"
                               th:classappend="${phieu.trangThai == 'Đã trả khách' || phieu.trangThai == 'Đã sửa xong'} ? 'badge-success' :
                                               (${phieu.trangThai == 'Đang sửa chữa'} ? 'badge-warning' :
-                                              (${phieu.trangThai == 'Chờ linh kiện'} ? 'badge-danger' : 'badge-info'))"
+                                              (${phieu.trangThai == 'Chờ linh kiện' || phieu.trangThai == 'Trả về - không sửa được'} ? 'badge-danger' : 'badge-info'))"
                               th:text="${phieu.trangThai}">
                         </span>
                     </td>

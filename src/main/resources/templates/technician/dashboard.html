@@ -7,12 +7,15 @@
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .action-cell {
+        /* ====[ BẮT ĐẦU SỬA LỖI LAYOUT ]==== */
+        .action-buttons {
             display: flex;
             align-items: center;
             gap: 16px; 
-            white-space: nowrap; 
+            white-space: nowrap; /* Ngăn nút "Xóa" xuống hàng */
         }
+        /* ====[ KẾT THÚC SỬA LỖI LAYOUT ]==== */
+
         .delete-btn-link {
             border: none;
             background: none;
@@ -33,11 +36,14 @@
         .search-container input { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1.5px solid #e2e8f0; font-size: 16px; }
         .search-container input:focus { outline: none; border-color: #667eea; }
         
-        /* CSS CHO NÚT SORT */
         thead a {
             text-decoration: none;
             color: inherit;
             transition: color 0.2s;
+            /* ====[ BẮT ĐẦU SỬA LỖI VỊ TRÍ NÚT SORT ]==== */
+            display: flex;
+            align-items: center;
+            /* ====[ KẾT THÚC SỬA LỖI VỊ TRÍ NÚT SORT ]==== */
         }
         thead a:hover {
             color: var(--primary-color);
@@ -150,7 +156,6 @@
         const cardBody = document.querySelector('.card'); 
         let debounceTimer;
 
-        // AJAX script không cần thay đổi nhiều, chỉ cần đảm bảo các link đã có đủ tham số
         function loadResults(url) {
             fetch(url, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -159,7 +164,7 @@
             .then(html => {
                 const currentContainer = document.getElementById('results-container');
                 if (currentContainer) {
-                    currentContainer.innerHTML = html;
+                    currentContainer.outerHTML = html;
                 }
             })
             .catch(error => {
@@ -174,7 +179,6 @@
         searchInput.addEventListener('input', function () {
             clearTimeout(debounceTimer);
             const keyword = this.value;
-            // Lấy sort state từ một phần tử ẩn hoặc giữ nguyên sort mặc định khi tìm kiếm
             const sortField = /*[[${sortField}]]*/ 'ngayTiepNhan';
             const sortDir = /*[[${sortDir}]]*/ 'desc';
             debounceTimer = setTimeout(() => {
@@ -184,7 +188,6 @@
         });
         
         cardBody.addEventListener('click', function(e) {
-            // Xử lý click cho cả pagination và sorting
             const link = e.target.closest('a');
             if (link && (link.closest('.pagination') || link.closest('thead'))) {
                 if (!link.classList.contains('disabled')) {

@@ -58,7 +58,6 @@ public class TechnicianController {
 	                            HttpServletRequest request) {
 	    Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
 	    if (technicianOpt.isPresent()) {
-	        // Tạo đối tượng Sort dựa trên tham số truyền vào
 	        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortField).ascending() : Sort.by(sortField).descending();
 	        PageRequest pageable = PageRequest.of(page, size, sort);
 	        Page<PhieuSuaChua> congViecPage;
@@ -72,7 +71,6 @@ public class TechnicianController {
 	        model.addAttribute("congViecPage", congViecPage);
 	        model.addAttribute("keyword", keyword);
 	        
-	        // Thêm các thuộc tính sắp xếp vào model để Thymeleaf sử dụng
 	        model.addAttribute("sortField", sortField);
 	        model.addAttribute("sortDir", sortDir);
 	        model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
@@ -95,17 +93,20 @@ public class TechnicianController {
 	        PhieuSuaChua phieu = phieuSuaChuaOpt.get();
 	        NhanVien technician = technicianOpt.get();
 
-	        // *** THÊM ĐOẠN KIỂM TRA QUYỀN SỞ HỮU ***
 	        if (phieu.getKyThuatVien() == null || !phieu.getKyThuatVien().getMaNV().equals(technician.getMaNV())) {
 	            redirectAttributes.addFlashAttribute("errorMessage", "Bạn không có quyền truy cập phiếu sửa chữa này.");
 	            return "redirect:/technician/dashboard";
 	        }
-	        // *****************************************
 
 	        List<ChiTietSuaChua> chiTietList = chiTietSuaChuaRepository.findByPhieuSuaChua_MaPhieu(id);
 	        List<LinhKien> allLinhKien = linhKienRepository.findAll();
 	        String trangThai = phieu.getTrangThai();
-	        List<String> trangThaiHoanThanh = Arrays.asList("Đã sửa xong", "Hoàn thành", "Đã trả khách");
+            
+            // ====[ BẮT ĐẦU THAY ĐỔI ]====
+	        // Thêm "Trả về - không sửa được" vào danh sách các trạng thái cuối cùng
+	        List<String> trangThaiHoanThanh = Arrays.asList("Đã sửa xong", "Hoàn thành", "Đã trả khách", "Trả về - không sửa được");
+	        // ====[ KẾT THÚC THAY ĐỔI ]====
+
 	        boolean isCompleted = trangThaiHoanThanh.contains(trangThai);
 
 	        model.addAttribute("phieu", phieu);
@@ -252,4 +253,41 @@ public class TechnicianController {
 		}
 		return "redirect:/technician/cong-viec/" + maPhieu;
 	}
+
+    @PostMapping("/cong-viec/mark-unrepairable")
+    @Transactional
+    public String markAsUnrepairable(@RequestParam("maPhieu") Integer maPhieu,
+                                     @RequestParam(value = "ghiChuKyThuat", required = false) String ghiChuKyThuat,
+                                     Principal principal,
+                                     RedirectAttributes redirectAttributes) {
+
+        Optional<PhieuSuaChua> phieuSuaChuaOpt = phieuSuaChuaRepository.findById(maPhieu);
+        Optional<NhanVien> technicianOpt = nhanVienRepository.findByTaiKhoan_TenDangNhap(principal.getName());
+
+        if (phieuSuaChuaOpt.isPresent() && technicianOpt.isPresent()) {
+            PhieuSuaChua phieu = phieuSuaChuaOpt.get();
+            NhanVien technician = technicianOpt.get();
+
+            if (phieu.getKyThuatVien() == null || !phieu.getKyThuatVien().getMaNV().equals(technician.getMaNV())) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Bạn không có quyền thực hiện thao tác này.");
+                return "redirect:/technician/dashboard";
+            }
+
+            try {
+                phieu.setTrangThai("Trả về - không sửa được");
+                phieu.setGhiChuKyThuat(ghiChuKyThuat);
+                phieuSuaChuaRepository.save(phieu);
+
+                redirectAttributes.addFlashAttribute("successMessage", "Đã cập nhật phiếu #" + maPhieu + " thành 'Trả về - không sửa được'.");
+                return "redirect:/technician/dashboard";
+
+            } catch (Exception e) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Lỗi khi cập nhật phiếu: " + e.getMessage());
+                return "redirect:/technician/cong-viec/" + maPhieu;
+            }
+        }
+
+        redirectAttributes.addFlashAttribute("errorMessage", "Không tìm thấy phiếu sửa chữa.");
+        return "redirect:/technician/dashboard";
+    }
 }
