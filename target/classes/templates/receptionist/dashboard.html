@@ -93,14 +93,14 @@
                         <a th:href="@{/receptionist/phieu-sua-chua/{id}(id=${phieu.maPhieu})}" class="link" title="Xem chi tiết">
                             <i class="fas fa-eye"></i> Xem
                         </a>
-                        <form th:if="${phieu.trangThai == 'Đã sửa xong'}"
+                        <form th:if="${phieu.trangThai == 'Đã sửa xong' || phieu.trangThai == 'Trả về - không sửa được'}"
                               th:action="@{/receptionist/tra-thiet-bi/{id}(id=${phieu.maPhieu})}" method="post" style="display: inline;"
                               onsubmit="return confirm('Xác nhận trả thiết bị này cho khách hàng?');">
                             <button type="submit" class="btn-return" title="Trả thiết bị cho khách">
                                 <i class="fas fa-check-circle"></i> Trả khách
                             </button>
                         </form>
-                    </td>
+                        </td>
                 </tr>
             </tbody>
         </table>
