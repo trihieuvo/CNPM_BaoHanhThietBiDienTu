@@ -123,9 +123,7 @@
 										th:action="@{/technician/cong-viec/delete/{id}(id=${phieu.maPhieu})}"
 										method="post" style="display: inline; margin: 0;">
 
-										<button type="submit" class="delete-btn-link"
-											th:onclick="'return confirm(\'Bạn có chắc chắn muốn xóa phiếu #' + ${phieu.maPhieu} + '? Hành động này không thể hoàn tác.\');'">
-											Xóa</button>
+									
 									</form>
 								</th:block></td>
 						</tr>
